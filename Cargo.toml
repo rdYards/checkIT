@@ -7,3 +7,5 @@ edition = "2024"
 gtk = { version = "0.10.0", package = "gtk4", features = ["v4_12"] }
 glib = "0.21.5"
 gio = "0.21.5"
+adw = { version = "0.8.1", package = "libadwaita", features = ["v1_8"] }
+glib-build-tools = "0.21.0"

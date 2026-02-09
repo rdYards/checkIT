@@ -1,39 +1,66 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <interface>
-  <requires lib="gtk" version="4.0" />
-  <object class="GtkApplicationWindow" id="main_window">
+  <requires lib="libadwaita" version="1.0" />
+
+  <object class="AdwApplicationWindow" id="main_window">
+    <property name="title" translatable="yes">To-Do</property>
     <property name="default-width">800</property>
     <property name="default-height">600</property>
-    <child type="titlebar">
-      <object class="GtkHeaderBar" id="headerbar">
-        <child type="title">
-          <object class="GtkLabel">
-            <property name="label">CheckIT</property>
-            <property name="visible">true</property>
+
+    <property name="content">
+      <object class="AdwNavigationSplitView" id="split_view">
+        <property name="min-sidebar-width">200</property>
+
+        <property name="sidebar">
+          <object class="AdwNavigationPage">
+            <property name="title" translatable="yes">Sidebar Title</property>
+            <property name="child">
+              <object class="AdwToolbarView">
+                <child type="top">
+                  <object class="AdwHeaderBar">
+                    <property name="show-title">True</property>
+                    <child type="title">
+                      <object class="GtkLabel">
+                        <property
+                                                    name="label"
+                                                    translatable="yes"
+                                                >Sidebar Title</property>
+                      </object>
+                    </child>
+                    <child type="start">
+                      <object class="GtkToggleButton">
+                        <property name="icon-name">list-add-symbolic</property>
+                        <property
+                                                    name="tooltip-text"
+                                                    translatable="yes"
+                                                >New Collection</property>
+                        <property
+                                                    name="action-name"
+                                                >win.new-collection</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </property>
           </object>
-        </child>
-      </object>
-    </child>
-    <child>
-      <object class="GtkBox" id="main_content">
-        <property name="orientation">vertical</property>
-        <property name="spacing">6</property>
-        <property name="margin-top">12</property>
-        <property name="margin-bottom">12</property>
-        <property name="margin-start">12</property>
-        <property name="margin-end">12</property>
-        <child>
-          <object class="GtkLabel">
-            <property name="label">Welcome to the application!</property>
-            <property name="halign">center</property>
+        </property>
+
+        <property name="content">
+          <object class="AdwNavigationPage">
+            <property name="title" translatable="yes">Tasks</property>
+            <property name="child">
+              <object class="AdwToolbarView">
+                <child type="top">
+                  <object class="AdwHeaderBar">
+                    <property name="show-title">True</property>
+                  </object>
+                </child>
+              </object>
+            </property>
           </object>
-          <object class="GtkButton" id="action_button">
-            <property name="label">Click this for testing!</property>
-            <property name="visible">true</property>
-            <property name="halign">left</property>
-        </object>
-        </child>
+        </property>
       </object>
-    </child>
+    </property>
   </object>
 </interface>
