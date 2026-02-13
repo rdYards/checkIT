@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/org/gtk_rs/CheckIT">
-    <file>resources/window.ui</file>
-    <file>resources/style.css</file>
+    <file alias="window.ui">resources/window.ui</file>
+    <file alias="style.css">resources/style.css</file>
+    <file alias="ledger_banner.ui">resources/ledger_banner.ui</file>
+    <file alias="icons/padlock2-symbolic.svg">resources/icons/padlock2-symbolic.svg</file>
+    <file alias="icons/padlock2-open-symbolic.svg">resources/icons/padlock2-open-symbolic.svg</file>
   </gresource>
 </gresources>

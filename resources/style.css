@@ -1,0 +1,7 @@
+.dark .lock-button {
+    color: white;
+}
+
+:not(.dark) .lock-button {
+    color: black;
+}
