@@ -27,27 +27,25 @@ impl LedgerBanner {
         drive_icon.set_properties(&[
             ("name", &"drive_icon"),
             ("halign", &gtk::Align::Start),
+            ("hexpand", &false)
         ]);
-        drive_icon.set_hexpand(false);
 
 
         // Create label with title
         let label = gtk::Label::new(Some(&banner_info.title));
         label.set_properties(&[
             ("name", &"network_label"),
-            ("halign", &gtk::Align::Fill)
+            ("halign", &gtk::Align::Fill),
+            ("hexpand", &true)
         ]);
-        label.set_hexpand(true);
 
         // Create lock button
         // Set Lock icon
         let lock_icon = if banner_info.lock_state {
-            gtk::Image::from_resource("/org/gtk_rs/CheckIT/icons/padlock2-symbolic.svg")
+            gtk::Image::from_icon_name("padlock2-symbolic")
         } else {
-            gtk::Image::from_resource("/org/gtk_rs/CheckIT/icons/padlock2-open-symbolic.svg")
+            gtk::Image::from_icon_name("padlock2-open-symbolic")
         };
-        lock_icon.set_use_fallback(true);
-        lock_icon.set_icon_size(gtk::IconSize::Normal);
         lock_icon.set_property("name", "lock_icon");
         
         // Create Button
@@ -55,9 +53,9 @@ impl LedgerBanner {
         lock_btn.set_child(Some(&lock_icon));
         lock_btn.set_properties(&[
             ("name", &"lock_btn"),
-            ("halign", &gtk::Align::End)
+            ("halign", &gtk::Align::End),
+            ("hexpand", &false)
         ]);
-        lock_btn.set_hexpand(false);
         lock_btn.set_tooltip_text(Some(if banner_info.lock_state {
             "Locked"
         } else {

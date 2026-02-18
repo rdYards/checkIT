@@ -40,7 +40,6 @@
                         <object class="GtkBox" id="ledger_banner_container">
                             <property name="name">ledger_banner_container</property>
                             <property name="orientation">vertical</property>
-                            <property name="spacing">6</property> 
                         </object>
                     </child>
                   </object>

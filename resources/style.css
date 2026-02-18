@@ -21,7 +21,8 @@ AdwHeaderBar {
 /* Banner Box Styles */
 /*Outer Box Wrapper*/
 #banner_box {
-    margin: 1px 7px;
+    margin: 3px 8px;
+    font-size: 1.1em;
 }
 /*Inner Box Button*/
 #ledger_banner {
@@ -30,6 +31,7 @@ AdwHeaderBar {
 
 /* Drive Icon Styles */
 #drive_icon {
+    -gtk-icon-size: 24px;
 }
 
 /* Network Label Styles */
@@ -45,13 +47,13 @@ AdwHeaderBar {
 
 /* Lock Icon Styles */
 #lock_icon {
-    
+    -gtk-icon-size: 24px;
 }
 
 .dark #lock_icon {
-    color: white;
+    color: dark;
 }
 
 :not(.dark) #lock_icon {
-    color: black;
+    color: white;
 }

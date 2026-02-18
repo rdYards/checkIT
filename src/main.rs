@@ -1,10 +1,11 @@
-mod ui;
 mod components;
+mod ui;
 use crate::ui::Ui;
 use gtk::glib;
 use gtk::prelude::*;
 
 fn main() -> glib::ExitCode {
+    // Pull resources.gresource for
     let res =
         gio::Resource::load("resources/resources.gresource").expect("Failed to load resources");
     gio::resources_register(&res);
@@ -25,6 +26,11 @@ fn setup_shortcuts(app: &adw::Application) {
 }
 
 fn build_ui(app: &adw::Application) {
+    // Import icon themes to use
+    let display = gtk::gdk::Display::default().expect("Couldn't get default display");
+    let icon_theme = gtk::IconTheme::for_display(&display);
+    icon_theme.add_resource_path("/org/gtk_rs/CheckIT/icons");
+    
     let window = Ui::new(app);
 
     // Add actions
