@@ -1,4 +1,4 @@
-use crate::components::ledger_banner::LedgerBannerList;
+use crate::components::ledger_banner::create_ledger_banners;
 use adw::{Application, ApplicationWindow};
 use gtk::gdk;
 use gtk::prelude::*;
@@ -17,17 +17,13 @@ impl Ui {
         let window: ApplicationWindow =
             builder.object("main_window").expect("Failed to get window");
 
+        // Get the container from main window
+        let container: gtk::Box = builder
+            .object("ledger_banner_container")
+            .expect("Failed to get container");
+        
         // Create the ledger banner list
-        let ledger_banner_list = LedgerBannerList::new();
-
-        // Get the list box from main window and add our banner
-        let list_box: gtk::ListBox = builder
-            .object("ledger_banner_list")
-            .expect("Failed to get list box");
-
-        // Replace the content of the list box with our ledger banner list
-        list_box.remove_all(); // Clear existing content
-        list_box.append(ledger_banner_list.widget());
+        create_ledger_banners(&container);
 
         window.set_application(Some(app));
 

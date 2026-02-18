@@ -1,7 +1,57 @@
-.dark .lock-button {
+/* Main Window Styles */
+#main_window {
+    min-width: 1200px;
+    min-height: 600px;
+}
+
+AdwHeaderBar {
+    padding: 12px;
+}
+
+/* Split View Styles */
+#split_view {
+    /*min-sidebar-width: 200px;*/
+}
+
+/* HeaderBar Styles */
+#split_view > * > * AdwHeaderBar {
+    /*show-title: true;*/
+}
+
+/* Banner Box Styles */
+/*Outer Box Wrapper*/
+#banner_box {
+    margin: 1px 7px;
+}
+/*Inner Box Button*/
+#ledger_banner {
+    width: 100%;
+}
+
+/* Drive Icon Styles */
+#drive_icon {
+}
+
+/* Network Label Styles */
+#network_label {
+}
+
+/* Lock Button Styles */
+#lock_btn {
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+/* Lock Icon Styles */
+#lock_icon {
+    
+}
+
+.dark #lock_icon {
     color: white;
 }
 
-:not(.dark) .lock-button {
+:not(.dark) #lock_icon {
     color: black;
 }
