@@ -1,8 +1,12 @@
-mod components;
+mod ledger;
 mod ui;
+
 use crate::ui::Ui;
+use gio::prelude::*;
 use gtk::glib;
 use gtk::prelude::*;
+
+struct Manifest {}
 
 fn main() -> glib::ExitCode {
     // Pull resources.gresource for
@@ -13,6 +17,23 @@ fn main() -> glib::ExitCode {
     let app = adw::Application::builder()
         .application_id("org.gtk_rs.CheckIT")
         .build();
+
+    // Get settings
+    let settings = gio::Settings::new("org.gtk_rs.CheckIT");
+
+    // Get or set the data directory
+    let data_dir = settings.string("data-directory");
+    if data_dir.is_empty() {
+        let mut dir = glib::user_data_dir();
+        dir.push("checkit");
+        settings
+            .set_string("data-directory", &dir.to_str().unwrap())
+            .unwrap();
+    }
+
+    // To get the directory back:
+    let data_dir = settings.string("data-directory");
+    println!("Data will be stored in: {}", data_dir);
 
     app.connect_startup(setup_shortcuts);
     app.connect_activate(build_ui);
@@ -30,7 +51,7 @@ fn build_ui(app: &adw::Application) {
     let display = gtk::gdk::Display::default().expect("Couldn't get default display");
     let icon_theme = gtk::IconTheme::for_display(&display);
     icon_theme.add_resource_path("/org/gtk_rs/CheckIT/icons");
-    
+
     let window = Ui::new(app);
 
     // Add actions
