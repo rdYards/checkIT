@@ -1,75 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <requires lib="libadwaita" version="1.0" />
-
+    <requires lib="libadwaita" version="1.0" />
+  <menu id="main-menu">
+  </menu>
   <object class="AdwApplicationWindow" id="main_window">
-    <property name="content">
-      <object class="AdwNavigationSplitView" id="split_view">
-        <property name="name">split_view</property> 
-        <property name="sidebar">
-          <object class="AdwNavigationPage">
-            <property name="title" translatable="yes">Network Banners</property>
-            <child>
-              <object class="AdwToolbarView">
-                <child type="top">
-                  <object class="AdwHeaderBar">
-                    <child type="title">
-                      <object class="GtkLabel">
-                        <property name="label" translatable="no">CheckIT</property>
-                      </object>
-                    </child>
-                    <child type="start">
-                      <object class="GtkToggleButton">
-                        <property name="icon-name">preferences-system-search-symbolic</property>
-                        <property name="tooltip-text" translatable="yes">New Collection</property>
-                        <property name="action-name">win.search-collection</property>
-                      </object>
-                    </child>
-                    <child type="end">
-                      <object class="GtkToggleButton">
-                        <property name="icon-name">list-add-symbolic</property>
-                        <property name="tooltip-text" translatable="yes">New Collection</property>
-                        <property name="action-name">win.new-collection</property>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <!-- Ledger Banner Btns zone -->
-                  <object class="GtkScrolledWindow">
-                    <child>
-                        <object class="GtkBox" id="ledger_banner_container">
-                            <property name="name">ledger_banner_container</property>
-                            <property name="orientation">vertical</property>
-                        </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-            </child>
-          </object>
-        </property>
-
-        <property name="content">
-          <object class="AdwNavigationPage">
-            <property name="title" translatable="yes">Collection Title</property>
-            <child>
-              <object class="AdwToolbarView">
-                <child type="top">
-                  <object class="AdwHeaderBar">
-                    <property name="show-title">True</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-          </object>
-        </property>
-      </object>
-    </property>
+    <property name="title" translatable="yes">CheckIT</property>
+    <property name="width-request">800</property>
+    <property name="height-request">600</property>
     <child>
       <object class="AdwBreakpoint">
         <condition>max-width: 700sp</condition>
         <setter object="split_view" property="collapsed">True</setter>
       </object>
     </child>
+    <property name="content">
+      <object class="GtkStack" id="stack">
+        <property name="transition-type">crossfade</property>
+        <child>
+          <object class="GtkStackPage">
+            <property name="name">placeholder</property>
+            <property name="child">
+                <object class="GtkBox">
+                  <property name="orientation">vertical</property>
+                  <child>
+                    <object class="GtkHeaderBar">
+                      <style>
+                        <class name="flat" />
+                      </style>
+                    </object>
+                  </child>
+                  <child>
+                    <object class="GtkWindowHandle">
+                      <property name="vexpand">True</property>
+                      <property name="child">
+                        <object class="AdwStatusPage">
+                          <property name="icon-name">folder-new-symbolic</property>
+                          <property name="title" translatable="yes">No Ledgers</property>
+                          <property name="description" translatable="yes">Create your Secure Ledger to get started.</property>
+                          <property name="child">
+                            <object class="GtkButton">
+                              <property name="label" translatable="yes">_New Ledger</property>
+                              <property name="use-underline">True</property>
+                              <property name="halign">center</property>
+                              <property name="action-name">win.new-ledger</property>
+                              <style>
+                                <class name="pill" />
+                                <class name="suggested-action" />
+                              </style>
+                            </object>
+                          </property>
+                        </object>
+                      </property>
+                    </object>
+                  </child>
+                </object>
+            </property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkStackPage">
+            <property name="name">main</property>
+            <property name="child">
+              <object class="AdwNavigationSplitView" id="split_view">
+                <property name="name">split_view</property>
+                <property name="sidebar">
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Network Banners</property>
+                    <child>
+                      <object class="AdwToolbarView">
+                        <child type="top">
+                          <object class="AdwHeaderBar">
+                            <child type="title">
+                              <object class="GtkLabel">
+                                <property name="label" translatable="no">Collection Title</property>
+                              </object>
+                            </child>
+                            <child type="end">
+                              <object class="GtkButton">
+                                <property name="icon-name">list-add-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">New Ledger</property>
+                                <property name="action-name">win.new-ledger</property>
+                              </object>
+                            </child>
+                            <child type="start">
+                                <object class="GtkToggleButton">
+                                    <property name="icon-name">system-search-symbolic</property>
+                                    <property name="tooltip-text" translatable="yes">Menu Toggle</property>
+                                    <property name="action-name">win.search-ledger</property>
+                                </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkScrolledWindow">
+                            <child>
+                                <object class="GtkBox" id="ledger_banner_container">
+                                    <property name="name">ledger_banner_container</property>
+                                    <property name="orientation">vertical</property>
+                                </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+                <property name="content">
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">CheckIT</property>
+                    <child>
+                      <object class="AdwToolbarView">
+                        <child type="top">
+                          <object class="AdwHeaderBar">
+                            <property name="show-title">True</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </property>
+          </object>
+        </child>
+      </object>
+    </property>
   </object>
 </interface>
