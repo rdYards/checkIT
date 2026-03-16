@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
     <requires lib="libadwaita" version="1.0" />
-  <menu id="main-menu">
+  <menu id="menu">
   </menu>
-  <object class="AdwApplicationWindow" id="main_window">
+  <template class="Window" parent="AdwApplicationWindow" id="main_window">
     <property name="title" translatable="yes">CheckIT</property>
-    <property name="width-request">800</property>
-    <property name="height-request">600</property>
+    <property name="default-width">720</property>
+    <property name="default-height">600</property>
+    <property name="width-request">360</property>
+    <property name="height-request">294</property>
     <child>
       <object class="AdwBreakpoint">
         <condition>max-width: 700sp</condition>
@@ -136,5 +138,5 @@
         </child>
       </object>
     </property>
-  </object>
+  </template>
 </interface>

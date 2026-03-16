@@ -1,9 +1,3 @@
-/* Main Window Styles */
-#main_window {
-    min-width: 1200px;
-    min-height: 600px;
-}
-
 AdwHeaderBar {
     padding: 12px;
 }
