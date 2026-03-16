@@ -16,6 +16,7 @@
     <property name="content">
       <object class="GtkStack" id="stack">
         <property name="transition-type">crossfade</property>
+        <!-- Place Holder Page -->
         <child>
           <object class="GtkStackPage">
             <property name="name">placeholder</property>
@@ -39,14 +40,23 @@
                           <property name="description" translatable="yes">Create your Secure Ledger to get started.</property>
                           <property name="child">
                             <object class="GtkButton">
-                              <property name="label" translatable="yes">_New Ledger</property>
-                              <property name="use-underline">True</property>
-                              <property name="halign">center</property>
-                              <property name="action-name">win.new-ledger</property>
-                              <style>
-                                <class name="pill" />
-                                <class name="suggested-action" />
-                              </style>
+                                <property name="label" translatable="yes">_New Ledger</property>
+                                <property name="use-underline">True</property>
+                                <property name="halign">center</property>
+                                <property name="action-name">win.new-ledger</property>
+                                <style>
+                                    <class name="pill" />
+                                    <class name="suggested-action" />
+                                </style>
+                            </object>
+                            <object class="GtkButton">
+                                <property name="label" translatable="yes">_Load Ledger</property>
+                                <property name="use-underline">True</property>
+                                <property name="halign">center</property>
+                                <property name="action-name">win.load-ledger</property>
+                                <style>
+                                    <class name="pill" />
+                                </style>
                             </object>
                           </property>
                         </object>
@@ -57,6 +67,7 @@
             </property>
           </object>
         </child>
+        <!-- Main Content -->
         <child>
           <object class="GtkStackPage">
             <property name="name">main</property>

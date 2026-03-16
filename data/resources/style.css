@@ -9,14 +9,14 @@ AdwHeaderBar {
 }
 
 /* Split View Styles */
-#split_view {
-    /*min-sidebar-width: 200px;*/
-}
+/*#split_view {
+    min-sidebar-width: 200px;
+}*/
 
 /* HeaderBar Styles */
-#split_view > * > * AdwHeaderBar {
-    /*show-title: true;*/
-}
+/*#split_view > * > * AdwHeaderBar {
+    show-title: true;
+}*/
 
 /* Banner Box Styles */
 /*Outer Box Wrapper*/
@@ -35,25 +35,5 @@ AdwHeaderBar {
 }
 
 /* Network Label Styles */
-#network_label {
-}
-
-/* Lock Button Styles */
-#lock_btn {
-    background: none;
-    border: none;
-    padding: 0;
-}
-
-/* Lock Icon Styles */
-#lock_icon {
-    -gtk-icon-size: 24px;
-}
-
-.dark #lock_icon {
-    color: dark;
-}
-
-:not(.dark) #lock_icon {
-    color: white;
-}
+/*#network_label {
+}*/
