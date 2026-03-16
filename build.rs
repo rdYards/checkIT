@@ -1,12 +1,15 @@
 use std::process::Command;
+use std::path::Path;
 
 fn main() {
-    println!("cargo:rerun-if-changed=resources.gresources.xml");
+    // Re-run build if resource files change
+    println!("cargo:rerun-if-changed=resources.gresource.xml");
     println!("cargo:rerun-if-changed=resources/window.ui");
     println!("cargo:rerun-if-changed=resources/ledger_banner.ui");
     println!("cargo:rerun-if-changed=resources/style.css");
     println!("cargo:rerun-if-changed=resources/org.gtk_rs.CheckIT.gschema.xml");
 
+    // Compile GResources
     let status = Command::new("glib-compile-resources")
         .args([
             "--target=resources/resources.gresource",
@@ -14,19 +17,22 @@ fn main() {
             "resources.gresource.xml",
         ])
         .status()
-        .expect("Install glib-compile-resources");
+        .expect("Failed to execute glib-compile-resources");
 
     if !status.success() {
-        panic!("Resource compilation failed: {}", status);
+        eprintln!("Resource compilation failed with exit code: {:?}", status);
+        panic!("Resource compilation failed");
     }
 
-    // Compile the schema
+    // Compile GSettings schema
+    let schema_path = Path::new("resources");
     let status = Command::new("glib-compile-schemas")
-        .arg("resources")
+        .arg(schema_path)
         .status()
-        .expect("Failed to compile GSettings schemas");
+        .expect("Failed to execute glib-compile-schemas");
 
     if !status.success() {
-        panic!("Schema compilation failed: {}", status);
+        eprintln!("Schema compilation failed with exit code: {:?}", status);
+        panic!("Schema compilation failed");
     }
 }
