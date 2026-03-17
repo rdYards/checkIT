@@ -7,6 +7,9 @@ edition = "2024"
 gtk = { version = "0.10.0", package = "gtk4", features = ["v4_12"] }
 gio = "0.21.5"
 adw = { version = "0.8.1", package = "libadwaita", features = ["v1_8"] }
-glib-build-tools = "0.21.0"
 serde_json = "1.0.149"
 serde = { version = "1.0.228", features = ["derive"] }
+sl = {git = "https://github.com/rdYards/sl.git"}
+
+[build-dependencies]
+glib-build-tools = "0.22.0"

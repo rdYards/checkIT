@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<gresources>
+  <gresource prefix="/org/gtk_rs/CheckIT">
+    <file alias="style.css">resources/style.css</file>
+    
+    <!-- UI Files -->
+    <file alias="window.ui">resources/ui/window.ui</file>
+  </gresource>
+  
+  <gresource prefix="/org/gtk_rs/CheckIT/icons/scalable/actions/">
+      <file
+            preprocess="xml-stripblanks"
+            alias="padlock2-symbolic.svg"
+        >resources/icons/padlock2-symbolic.svg</file>
+      <file
+            preprocess="xml-stripblanks"
+            alias="padlock2-open-symbolic.svg"
+        >resources/icons/padlock2-open-symbolic.svg</file>
+  </gresource>
+</gresources>

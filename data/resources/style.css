@@ -18,10 +18,6 @@ AdwHeaderBar {
     margin: 3px 8px;
     font-size: 1.1em;
 }
-/*Inner Box Button*/
-#ledger_banner {
-    width: 100%;
-}
 
 /* Drive Icon Styles */
 #drive_icon {

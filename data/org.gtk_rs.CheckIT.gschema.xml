@@ -1,28 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <schemalist>
   <schema id="org.gtk_rs.CheckIT" path="/org/gtk_rs/CheckIT/">
-    <key name="data-directory" type="string">
-      <default>'</default>
-      <summary>Directory for storing application data</summary>
-      <description
-            >Path to the directory where application data should be stored</description>
-    </key>
     <key name="window-width" type="i">
-        <range min="100" max="5000" />
-        <default>800</default>
-        <summary>Window width</summary>
-        <description>The width of the application window</description>
+        <default>-1</default>
+        <summary>Default window width</summary>
     </key>
     <key name="window-height" type="i">
-        <range min="100" max="5000" />
-        <default>600</default>
-        <summary>Window height</summary>
-        <description>The height of the application window</description>
+        <default>-1</default>
+        <summary>Default window height</summary>
     </key>
-    <key name="recent-files" type="strv">
-        <default>[]</default>
-        <summary>Recently opened files</summary>
-        <description>List of recently opened files</description>
+    <key name="is-maximized" type="b">
+        <default>false</default>
+        <summary>Default window maximized behaviour</summary>
     </key>
   </schema>
 </schemalist>
