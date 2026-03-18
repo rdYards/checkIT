@@ -6,6 +6,7 @@
     <!-- UI Files -->
     <file alias="window.ui">resources/ui/window.ui</file>
     <file alias="placeholder.ui">resources/ui/placeholder.ui</file>
+    <file alias="new_ledger.ui">resources/ui/new_ledger.ui</file>
   </gresource>
   
   <gresource prefix="/org/gtk_rs/CheckIT/icons/scalable/actions/">

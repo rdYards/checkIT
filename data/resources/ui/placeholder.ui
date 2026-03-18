@@ -1,16 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
-  <object class="GtkBox" id="placeholder_root">
-    <property name="orientation">vertical</property>
-    <child>
-      <object class="GtkHeaderBar">
-        <style>
-          <class name="flat" />
-        </style>
-      </object>
-    </child>
+  <object class="AdwStatusPage" id="placeholder_root">
     <child>
       <object class="GtkWindowHandle">
         <property name="vexpand">True</property>

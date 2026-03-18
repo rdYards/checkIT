@@ -1,29 +1,44 @@
+/* General Styles */
+AdwApplicationWindow {
+    background: white;
+}
+
+/* HeaderBar Styles */
 AdwHeaderBar {
     padding: 12px;
+    min-height: 56px;
 }
 
 /* Split View Styles */
-/*#split_view {
-    min-sidebar-width: 200px;
-}*/
-
-/* HeaderBar Styles */
-/*#split_view > * > * AdwHeaderBar {
-    show-title: true;
-}*/
-
-/* Banner Box Styles */
-/*Outer Box Wrapper*/
-#banner_box {
-    margin: 3px 8px;
-    font-size: 1.1em;
+AdwNavigationSplitView {
+    min-width: 200px;
 }
 
-/* Drive Icon Styles */
-#drive_icon {
-    -gtk-icon-size: 24px;
+/* Status Page Styles */
+AdwStatusPage {
+    padding: 24px;
 }
 
-/* Network Label Styles */
-/*#network_label {
-}*/
+/* Entry Row Styles */
+AdwEntryRow {
+    margin: 6px 0;
+}
+
+/* Button Styles */
+.pill-button {
+    border-radius: 24px;
+    padding: 6px 12px;
+    margin: 3px;
+}
+
+/* Scrolled Window Styles */
+GtkScrolledWindow {
+    min-width: 200px;
+    min-height: 200px;
+}
+
+/* Banner Container Styles */
+#ledger_banner_container {
+    margin: 12px;
+    padding: 6px 0;
+}

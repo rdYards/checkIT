@@ -1,104 +1,127 @@
 use adw::{Application, ApplicationWindow, gio};
-use gio::Settings;
+use gio::{ActionEntry, Settings};
 use gtk::prelude::*;
-use gtk::{Box as GtkBox, Builder, Widget, gdk};
+use gtk::{Box as GtkBox, Builder, Widget, gdk, gdk::Display, IconTheme};
 
-use crate::APP_ID;
+use crate::{APP_ID, actions};
 
-pub struct App {
-    pub window: ApplicationWindow,
-    settings: Settings,
+pub fn build_app(app: &Application) {
+    // Import icon themes to use
+    let display = Display::default().expect("Couldn't get default display");
+    let icon_theme = IconTheme::for_display(&display);
+    icon_theme.add_resource_path("/org/gtk_rs/CheckIT/icons");
+
+    // Load CSS provider
+    load_css();
+
+    // Set up Shortcuts for Actions
+    setup_shortcuts(app);
+    
+    let builder = Builder::new();
+
+    // Load window.ui
+    builder
+        .add_from_resource("/org/gtk_rs/CheckIT/window.ui")
+        .expect("Failed to load window.ui");
+    
+    // Load .ui for components
+    builder
+        .add_from_resource("/org/gtk_rs/CheckIT/placeholder.ui")
+        .expect("Failed to load placeholder.ui");
+
+    // Main window from window.ui
+    let window: ApplicationWindow = builder
+        .object("main_window")
+        .expect("Failed to get main_window");
+
+    // The empty placeholder container from window.ui
+    let placeholder_box: GtkBox = builder
+        .object("placeholder_box")
+        .expect("Failed to get placeholder_box");
+
+    // The actual placeholder content from placeholder.ui
+    let placeholder_root: Widget = builder
+        .object("placeholder_root")
+        .expect("Failed to get placeholder_root");
+
+    // Insert the placeholder UI into the placeholder box
+    placeholder_box.append(&placeholder_root);
+
+    window.set_application(Some(app));
+
+    // Initialize settings
+    let settings = Settings::new(APP_ID);
+
+    // Set up actions
+    setup_actions(&window);
+
+    // Load window size
+    load_window_size(&window, &settings);
+
+    window.present();
 }
 
-impl App {
-    pub fn new(app: &Application) -> Self {
-        // Load CSS provider first
-        Self::load_css();
+fn setup_actions(window: &ApplicationWindow) {
+    // Action to create new Ledger
+    let action_new_ledger = ActionEntry::builder("new-ledger")
+        .activate(move |_, _, _| {
+            actions::new_ledger();
+        })
+        .build();
+    
+    // Action to load Ledger
+    let action_load_ledger = ActionEntry::builder("load-ledger")
+        .activate(move |_, _, _| {
+            actions::load_ledger();
+        })
+        .build();
+    
+    // Add all actions to ApplicationWindow
+    window.add_action_entries([action_new_ledger, action_load_ledger]);
+}
 
-        let builder = Builder::new();
+fn setup_shortcuts(app: &adw::Application) {
+    app.set_accels_for_action("win.close", &["<Ctrl>W"]);
+}
 
-        // Load window.ui
-        builder
-            .add_from_resource("/org/gtk_rs/CheckIT/window.ui")
-            .expect("Failed to load window.ui");
-        // Load placeholder.ui
-        builder
-            .add_from_resource("/org/gtk_rs/CheckIT/placeholder.ui")
-            .expect("Failed to load placeholder.ui");
+// TODO! Need to implement at a later data
+// pub fn save_window_size(&self) -> Result<(), glib::BoolError> {
+//     // Get the size of the window
+//     let size = self.window.default_size();
 
-        // Main window from window.ui
-        let window: ApplicationWindow = builder
-            .object("main_window")
-            .expect("Failed to get main_window");
+//     // Set the window state in `settings`
+//     self.settings().set_int("window-width", size.0)?;
+//     self.settings().set_int("window-height", size.1)?;
+//     self.settings()
+//         .set_boolean("is-maximized", self.window.is_maximized())?;
 
-        // The empty placeholder container from window.ui
-        let placeholder_box: GtkBox = builder
-            .object("placeholder_box")
-            .expect("Failed to get placeholder_box");
+//     Ok(())
+// }
 
-        // The actual placeholder content from placeholder.ui
-        let placeholder_root: Widget = builder
-            .object("placeholder_root")
-            .expect("Failed to get placeholder_root");
+fn load_window_size(window: &ApplicationWindow, settings: &Settings) {
+    // Get the window state from `settings`
+    let width = settings.int("window-width");
+    let height = settings.int("window-height");
+    let is_maximized = settings.boolean("is-maximized");
 
-        // Insert the placeholder UI into the placeholder box
-        placeholder_box.append(&placeholder_root);
+    // Set the size of the window
+    window.set_default_size(width, height);
 
-        window.set_application(Some(app));
-
-        // Initialize settings
-        let settings = Settings::new(APP_ID);
-
-        Self { window, settings }
+    // If the window was maximized when it was closed, maximize it again
+    if is_maximized {
+        window.maximize();
     }
+}
 
-    fn load_css() {
-        let provider = gtk::CssProvider::new();
-        provider.load_from_resource("/org/gtk_rs/CheckIT/style.css");
+fn load_css() {
+    let provider = gtk::CssProvider::new();
+    provider.load_from_resource("/org/gtk_rs/CheckIT/style.css");
 
-        if let Some(display) = gdk::Display::default() {
-            gtk::style_context_add_provider_for_display(
-                &display,
-                &provider,
-                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-            );
-        }
-    }
-
-    pub fn present(&self) {
-        self.window.present();
-    }
-
-    fn settings(&self) -> &Settings {
-        &self.settings
-    }
-
-    // TODO! Need to implement at a later data
-    // pub fn save_window_size(&self) -> Result<(), glib::BoolError> {
-    //     // Get the size of the window
-    //     let size = self.window.default_size();
-
-    //     // Set the window state in `settings`
-    //     self.settings().set_int("window-width", size.0)?;
-    //     self.settings().set_int("window-height", size.1)?;
-    //     self.settings()
-    //         .set_boolean("is-maximized", self.window.is_maximized())?;
-
-    //     Ok(())
-    // }
-
-    pub fn load_window_size(&self) {
-        // Get the window state from `settings`
-        let width = self.settings().int("window-width");
-        let height = self.settings().int("window-height");
-        let is_maximized = self.settings().boolean("is-maximized");
-
-        // Set the size of the window
-        self.window.set_default_size(width, height);
-
-        // If the window was maximized when it was closed, maximize it again
-        if is_maximized {
-            self.window.maximize();
-        }
+    if let Some(display) = gdk::Display::default() {
+        gtk::style_context_add_provider_for_display(
+            &display,
+            &provider,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
     }
 }
