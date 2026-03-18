@@ -1,7 +1,7 @@
 use adw::{Application, ApplicationWindow, gio};
 use gio::Settings;
-use gtk::gdk;
 use gtk::prelude::*;
+use gtk::{Box as GtkBox, Builder, Widget, gdk};
 
 use crate::APP_ID;
 
@@ -15,10 +15,34 @@ impl App {
         // Load CSS provider first
         Self::load_css();
 
-        let builder = gtk::Builder::from_resource("/org/gtk_rs/CheckIT/window.ui");
+        let builder = Builder::new();
 
-        let window: ApplicationWindow =
-            builder.object("main_window").expect("Failed to get window");
+        // Load window.ui
+        builder
+            .add_from_resource("/org/gtk_rs/CheckIT/window.ui")
+            .expect("Failed to load window.ui");
+        // Load placeholder.ui
+        builder
+            .add_from_resource("/org/gtk_rs/CheckIT/placeholder.ui")
+            .expect("Failed to load placeholder.ui");
+
+        // Main window from window.ui
+        let window: ApplicationWindow = builder
+            .object("main_window")
+            .expect("Failed to get main_window");
+
+        // The empty placeholder container from window.ui
+        let placeholder_box: GtkBox = builder
+            .object("placeholder_box")
+            .expect("Failed to get placeholder_box");
+
+        // The actual placeholder content from placeholder.ui
+        let placeholder_root: Widget = builder
+            .object("placeholder_root")
+            .expect("Failed to get placeholder_root");
+
+        // Insert the placeholder UI into the placeholder box
+        placeholder_box.append(&placeholder_root);
 
         window.set_application(Some(app));
 

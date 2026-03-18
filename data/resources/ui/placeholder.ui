@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <object class="GtkBox" id="placeholder_root">
+    <property name="orientation">vertical</property>
+    <child>
+      <object class="GtkHeaderBar">
+        <style>
+          <class name="flat" />
+        </style>
+      </object>
+    </child>
+    <child>
+      <object class="GtkWindowHandle">
+        <property name="vexpand">True</property>
+        <property name="child">
+          <object class="AdwStatusPage">
+            <property name="icon-name">folder-new-symbolic</property>
+            <property name="title" translatable="yes">No Ledgers</property>
+            <property name="description" translatable="yes">
+              Create your Secure Ledger to get started.
+            </property>
+            <property name="child">
+              <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <property name="spacing">6</property>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">_New Ledger</property>
+                    <property name="use-underline">True</property>
+                    <property name="halign">center</property>
+                    <property name="action-name">win.new-ledger</property>
+                    <style>
+                      <class name="pill" />
+                      <class name="suggested-action" />
+                    </style>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">_Load Ledger</property>
+                    <property name="use-underline">True</property>
+                    <property name="halign">center</property>
+                    <property name="action-name">win.load-ledger</property>
+                    <style>
+                      <class name="pill" />
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+  </object>
+</interface>
