@@ -10,7 +10,7 @@
             <property name="icon-name">folder-new-symbolic</property>
             <property name="title" translatable="yes">No Ledgers</property>
             <property name="description" translatable="yes">
-              Create your Secure Ledger to get started.
+              Create a Secure Ledger to get started.
             </property>
             <property name="child">
               <object class="GtkBox">

@@ -1,7 +1,7 @@
-use adw::{Application, ApplicationWindow, gio};
+use adw::{Application, ApplicationWindow, gio, glib, glib::clone};
 use gio::{ActionEntry, Settings};
 use gtk::prelude::*;
-use gtk::{Box as GtkBox, Builder, Widget, gdk, gdk::Display, IconTheme};
+use gtk::{Box as GtkBox, Builder, IconTheme, Widget, gdk, gdk::Display};
 
 use crate::{APP_ID, actions};
 
@@ -16,14 +16,14 @@ pub fn build_app(app: &Application) {
 
     // Set up Shortcuts for Actions
     setup_shortcuts(app);
-    
+
     let builder = Builder::new();
 
     // Load window.ui
     builder
         .add_from_resource("/org/gtk_rs/CheckIT/window.ui")
         .expect("Failed to load window.ui");
-    
+
     // Load .ui for components
     builder
         .add_from_resource("/org/gtk_rs/CheckIT/placeholder.ui")
@@ -64,18 +64,26 @@ pub fn build_app(app: &Application) {
 fn setup_actions(window: &ApplicationWindow) {
     // Action to create new Ledger
     let action_new_ledger = ActionEntry::builder("new-ledger")
-        .activate(move |_, _, _| {
-            actions::new_ledger();
-        })
+        .activate(clone!(
+            #[weak]
+            window,
+            move |_, _, _| {
+                actions::new_ledger(window.clone());
+            }
+        ))
         .build();
-    
+
     // Action to load Ledger
     let action_load_ledger = ActionEntry::builder("load-ledger")
-        .activate(move |_, _, _| {
-            actions::load_ledger();
-        })
+        .activate(clone!(
+            #[weak]
+            window,
+            move |_, _, _| {
+                actions::load_ledger(window.clone());
+            }
+        ))
         .build();
-    
+
     // Add all actions to ApplicationWindow
     window.add_action_entries([action_new_ledger, action_load_ledger]);
 }
