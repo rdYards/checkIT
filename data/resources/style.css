@@ -1,44 +1,64 @@
-/* General Styles */
 AdwApplicationWindow {
-    background: white;
+    font-family: "Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
 }
 
-/* HeaderBar Styles */
-AdwHeaderBar {
+AdwHeaderBar,
+GtkHeaderBar {
     padding: 12px;
     min-height: 56px;
+    background: transparent;
 }
-
-/* Split View Styles */
 AdwNavigationSplitView {
     min-width: 200px;
 }
 
-/* Status Page Styles */
-AdwStatusPage {
+/* TODO! */
+/*AdwStatusPage {
     padding: 24px;
-}
+}*/
 
 /* Entry Row Styles */
 AdwEntryRow {
     margin: 6px 0;
-}
-
-/* Button Styles */
-.pill-button {
-    border-radius: 24px;
     padding: 6px 12px;
-    margin: 3px;
-}
-
-/* Scrolled Window Styles */
-GtkScrolledWindow {
-    min-width: 200px;
-    min-height: 200px;
+    transition: background-color 0.2s ease;
 }
 
 /* Banner Container Styles */
-#ledger_banner_container {
-    margin: 12px;
-    padding: 6px 0;
+#banner_box {
+    padding: 10px;
+    gap: 5px;
+}
+
+#ledger_banner {
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+/* ListBox and Button styles for navigation */
+#ledger_list {
+    background: transparent;
+}
+
+#ledger_list button.active {
+    background: var(--accent-color);
+}
+
+/* Navigation page title styles */
+AdwNavigationPage > * > * > .title {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 4px 0;
+}
+
+/* View stack transitions */
+AdwViewStack {
+    transition: opacity 0.3s ease;
+}
+
+/* Focus styles for accessibility */
+:focus {
+    outline: var(--accent-color);
+    outline-offset: 2px;
 }

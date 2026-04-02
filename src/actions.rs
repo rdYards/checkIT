@@ -1,29 +1,27 @@
 use adw::{
     AlertDialog, ApplicationWindow, EntryRow, PasswordEntryRow, PreferencesGroup,
     ResponseAppearance, Window,
-    glib::GString,
+    gio::{Cancellable, File},
+    glib::{GString, MainContext},
     prelude::{
         AdwDialogExt, AlertDialogExt, AlertDialogExtManual, PreferencesGroupExt, PreferencesRowExt,
     },
 };
-use gtk::{
-    FileDialog,
-    gio::{Cancellable, File},
-    prelude::*,
-};
+use gtk::{FileDialog, prelude::*};
+use std::sync::Arc;
 
-pub fn new_ledger(parent: ApplicationWindow) {
-    // Create a new dialog
+use crate::{ledger::Ledger, ledger_db::LedgerDatabase};
+
+pub fn new_ledger(parent: ApplicationWindow, db: Arc<LedgerDatabase>) {
     let dialog = AlertDialog::new(
         Some("Create New Ledger"),
         Some("Please enter the details for your new ledger"),
     );
 
-    // Add response buttons
     dialog.add_response("cancel", "Cancel");
     dialog.add_response("create", "Create");
 
-    // Create input fields
+    // Input fields
     let title_entry = EntryRow::new();
     title_entry.set_title("Title");
     title_entry.set_hexpand(true);
@@ -44,25 +42,49 @@ pub fn new_ledger(parent: ApplicationWindow) {
 
     dialog.set_extra_child(Some(&content));
 
-    // Configure the dialog appearance
     dialog.set_response_appearance("create", ResponseAppearance::Suggested);
     dialog.set_response_appearance("cancel", ResponseAppearance::Destructive);
     dialog.set_default_response(Some("cancel"));
     dialog.set_close_response("cancel");
 
+    let parent_close_clone = parent.clone();
+
     // Handle the response
-    dialog.choose(Some(&parent), None::<&Cancellable>, move |response_id| {
-        if response_id == "create" {
-            let title = title_entry.text().to_string();
-            let description = description_entry.text().to_string();
-            let password = password_entry.text().to_string();
-            create_ledger(title, description, password);
-        }
-    });
+    dialog.choose(
+        Some(&parent_close_clone),
+        None::<&Cancellable>,
+        move |response_id| {
+            if response_id == "create" {
+                let title = title_entry.text().to_string();
+                let password = password_entry.text().to_string();
+
+                // Check if required fields are empty
+                if title.trim().is_empty() || password.trim().is_empty() {
+                    popup_alert(
+                        &parent,
+                        "Error Creating Ledger",
+                        "Title and password are required fields",
+                    );
+                    return;
+                }
+
+                let description = description_entry.text().to_string();
+                let ledger = Ledger::new(&password, &title, &description);
+
+                match db.add_ledger(title, ledger) {
+                    Ok(_) => {
+                        popup_alert(&parent, "Ledger Created Successfully", "");
+                    }
+                    Err(e) => {
+                        popup_alert(&parent, "Error Creating Ledger", &format!("{}", e));
+                    }
+                }
+            }
+        },
+    );
 }
 
-pub fn load_ledger(parent: ApplicationWindow) {
-    // Create a new file dialog
+pub fn load_ledger(parent: ApplicationWindow, db: Arc<LedgerDatabase>) {
     let dialog = FileDialog::new();
     dialog.set_title("Select a Ledger File");
     dialog.set_initial_folder(Some(&File::for_path("~/")));
@@ -83,9 +105,8 @@ pub fn load_ledger(parent: ApplicationWindow) {
                 Ok(file) => {
                     // Get the path of the selected file
                     let path = file.path().unwrap_or_default();
-                    println!("Selected file: {}", path.display());
 
-                    // Create a password dialog
+                    // Create password dialog
                     let dialog = AlertDialog::new(
                         Some("Enter Password"),
                         Some("Enter password associated to import ledger"),
@@ -111,35 +132,56 @@ pub fn load_ledger(parent: ApplicationWindow) {
                     dialog.choose(
                         Some(&parent_close_clone),
                         Some(&cancellable),
-                        move |response_id: GString| {
-                            match response_id.as_str() {
-                                "enter" => {
-                                    eprintln!(
-                                        "User entered password: {} -- {}",
-                                        password_entry.text(),
-                                        path.display()
-                                    );
-                                    // do your import here
+                        move |response_id: GString| match response_id.as_str() {
+                            "enter" => {
+                                let password = password_entry.text().to_string();
+                                let path_str = path.to_str().unwrap().to_string();
+
+                                if let Some(ledger) = Ledger::from_file(&password, &path_str) {
+                                    match db.add_ledger(path_str, ledger) {
+                                        Ok(_) => {
+                                            MainContext::default().invoke_local(move || {
+                                                popup_alert(
+                                                    &parent,
+                                                    "Ledger Created Successfully",
+                                                    "",
+                                                );
+                                            });
+                                        }
+                                        Err(e) => {
+                                            MainContext::default().invoke_local(move || {
+                                                popup_alert(
+                                                    &parent,
+                                                    "Error Loading Ledger",
+                                                    &format!("{}", e),
+                                                );
+                                            });
+                                        }
+                                    }
+                                } else {
+                                    MainContext::default().invoke_local(move || {
+                                        popup_alert(
+                                            &parent,
+                                            "Error Loading Ledger",
+                                            "Invalid password or file not found",
+                                        );
+                                    });
                                 }
-                                "cancel" => popup_alert(
-                                    parent,
-                                    "Canceled Password",
-                                    "Please input a password to import Ledger",
-                                ),
-                                _ => {
-                                    popup_alert(
-                                        parent,
-                                        "Unexpect Response",
-                                        "Something went wrong",
-                                    );
-                                }
+                            }
+                            "cancel" => popup_alert(
+                                &parent,
+                                "Canceled Password",
+                                "Please input a password to import Ledger",
+                            ),
+                            _ => {
+                                popup_alert(&parent, "Unexpect Response", "Something went wrong");
                             }
                         },
                     );
                 }
                 Err(e) => {
                     popup_alert(
-                        parent,
+                        &parent,
                         "Error Opening File",
                         &format!("Error opening file dialog: {}", e),
                     );
@@ -149,18 +191,14 @@ pub fn load_ledger(parent: ApplicationWindow) {
     );
 }
 
-fn popup_alert(parent: ApplicationWindow, alert: &str, message: &str) {
-    let dialog = AlertDialog::new(Some(alert), Some(message));
+/// Pop-up for GUI notifacations
+pub fn popup_alert(parent: &ApplicationWindow, alert: &str, message: &str) {
+    let dialog = AlertDialog::new(
+        Some(alert),
+        if message == "" { None } else { Some(message) },
+    );
     dialog.add_response("ok", "OK");
     dialog.set_default_response(Some("ok"));
 
-    // For a single button you can just show it; it will dismiss itself.
-    dialog.present(Some(&parent));
-}
-
-pub fn create_ledger(title: String, description: String, password: String) {
-    println!(
-        "Title: {}, Description: {}, Password: {}",
-        title, description, password
-    );
+    dialog.present(Some(parent));
 }

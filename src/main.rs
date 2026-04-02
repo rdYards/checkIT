@@ -1,13 +1,14 @@
-mod app;
 mod actions;
+mod app;
 mod ledger;
+mod ledger_db;
+mod page;
 
-use adw::{Application, glib};
-use gio::Resource;
-use gio::prelude::*;
+use adw::{Application, gio, gio::Resource, gio::prelude::*, glib};
 use std::path::Path;
 
 const APP_ID: &str = "org.gtk_rs.CheckIT";
+const DEFAULT_FILE_PATH: &str = "~/";
 
 fn main() -> glib::ExitCode {
     // Load resources from the output directory

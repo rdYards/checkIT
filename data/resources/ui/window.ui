@@ -44,14 +44,11 @@
                         </child>
                       </object>
                     </child>
+                    <!-- Button Navication for ledger pages -->
                     <child>
-                      <object class="GtkScrolledWindow">
-                        <child>
-                            <object class="GtkBox" id="ledger_banner_container">
-                                <property name="name">ledger_banner_container</property>
-                                <property name="orientation">vertical</property>
-                            </object>
-                        </child>
+                      <object class="GtkListBox" id="ledger_list">
+                        <property name="selection-mode">none</property>
+                        <property name="activate-on-single-click">true</property>
                       </object>
                     </child>
                   </object>
@@ -73,11 +70,9 @@
                         </child>
                       </object>
                     </child>
-                    <!-- placeholder.ui will be placed here -->
+                    <!-- PageManger works in this location -->
                     <child>
-                      <object class="GtkBox" id="placeholder_box">
-                        <property name="orientation">vertical</property>
-                      </object>
+                        <object class="AdwViewStack" id="view_stack" />
                     </child>
                   </object>
                 </child>
