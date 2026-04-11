@@ -42,9 +42,6 @@ pub fn build_app(app: &Application) {
     builder
         .add_from_resource("/org/gtk_rs/CheckIT/placeholder.ui")
         .expect("Failed to load placeholder.ui");
-    builder
-        .add_from_resource("/org/gtk_rs/CheckIT/ledger.ui")
-        .expect("Failed to load ledger.ui");
 
     // The actual placeholder content from placeholder.ui
     let placeholder_root: Widget = builder
@@ -80,40 +77,44 @@ pub fn build_app(app: &Application) {
     setup_actions(&window, db.clone());
 
     // Subscribe events for db and UI
-    let mut events = db.subscribe_lock_events();
+    let receiver = db
+        .subscribe_lock_events()
+        .expect("Failed to subscribe to events");
     let window_clone = window.clone();
-    glib::idle_add_local(move || {
-        if let Ok(events_receiver) = &mut events {
-            while let Ok(event) = events_receiver.try_recv() {
-                match event {
-                    LockEvent::LedgerAdded(ledger_key) => {
-                        if let Ok(Some(ledger)) = db.request_ledger(&ledger_key, "ui", true) {
-                            let info = LedgerBannerInfo {
-                                key: ledger_key.clone(),
-                                title: ledger.data.meta.title.clone(),
-                                state: ledger.state.clone(),
-                            };
-                            if let Err(e) =
-                                page_manager.create_ledger_page_and_banner(&ledger, &info)
-                            {
-                                actions::popup_alert(
-                                    &window_clone,
-                                    "Error Creating Ledger",
-                                    &format!("Error creating ledger page and banner: {}", e),
-                                );
-                            }
-                            page_manager.show_page(&ledger_key);
-                            page_manager.highlight_active_button(&ledger_key);
+    let db_clone = db.clone();
+    let mut page_manager_clone = page_manager.clone();
+
+    glib::MainContext::default().spawn_local(async move {
+        while let Ok(event) = receiver.recv().await {
+            match event {
+                LockEvent::LedgerAdded(ledger_key) => {
+                    if let Ok(Some(ledger)) = db_clone.request_ledger(&ledger_key, "ui", true) {
+                        let info = LedgerBannerInfo {
+                            key: ledger_key.clone(),
+                            title: ledger.data.meta.title.clone(),
+                            state: ledger.state.clone(),
+                        };
+                        if let Err(e) =
+                            page_manager_clone.create_ledger_page_and_banner(&ledger, &info)
+                        {
+                            actions::popup_alert(
+                                &window_clone,
+                                "Error Creating Ledger",
+                                &format!("Error: {}", e),
+                            );
                         }
+                        page_manager_clone.show_page(&ledger_key);
+                        page_manager_clone.highlight_active_button(&ledger_key);
                     }
-                    LockEvent::LedgerRemoved(ledger_key) => {
-                        page_manager.remove_page(&ledger_key);
-                    }
-                    _ => {}
                 }
+                LockEvent::LedgerRemoved(ledger_key) => {
+                    page_manager_clone.remove_page(&ledger_key);
+                }
+                _ => {}
             }
         }
-        glib::ControlFlow::Continue
+        // When the channel is closed, the loop ends and the task terminates.
+        // This allows the application to shut down cleanly.
     });
 
     window.present();

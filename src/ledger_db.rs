@@ -1,9 +1,9 @@
+use crate::ledger::{Ledger, LedgerState};
+use async_channel::{Receiver, Sender};
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
-
-use crate::ledger::{Ledger, LedgerState};
 
 #[derive(Debug, Clone)]
 pub enum LockEvent {
@@ -25,7 +25,7 @@ pub struct LedgerBannerInfo {
 pub struct LedgerDatabase {
     ledgers: Arc<RwLock<HashMap<String, Ledger>>>,
     // For lock event subscriptions
-    lock_events: Arc<RwLock<Vec<std::sync::mpsc::Sender<LockEvent>>>>,
+    lock_events: Arc<RwLock<Vec<Sender<LockEvent>>>>,
 }
 impl LedgerDatabase {
     pub fn new() -> Self {
@@ -39,12 +39,10 @@ impl LedgerDatabase {
         let mut ledgers = self.ledgers.write().map_err(|e| e.to_string())?;
         ledgers.insert(key.clone(), ledger);
 
-        // Notify subscribers of ledger addition
         let events = self.lock_events.read().map_err(|e| e.to_string())?;
         for tx in events.iter() {
-            let _ = tx.send(LockEvent::LedgerAdded(key.clone()));
+            let _ = tx.try_send(LockEvent::LedgerAdded(key.clone()));
         }
-
         Ok(())
     }
 
@@ -55,7 +53,7 @@ impl LedgerDatabase {
         // Notify subscribers of ledger removal
         let events = self.lock_events.read().map_err(|e| e.to_string())?;
         for tx in events.iter() {
-            let _ = tx.send(LockEvent::LedgerRemoved(key.to_string()));
+            let _ = tx.try_send(LockEvent::LedgerRemoved(key.to_string()));
         }
 
         Ok(ledger)
@@ -134,8 +132,8 @@ impl LedgerDatabase {
         Ok(!ledgers.is_empty())
     }
 
-    pub fn subscribe_lock_events(&self) -> Result<std::sync::mpsc::Receiver<LockEvent>, String> {
-        let (tx, rx) = std::sync::mpsc::channel();
+    pub fn subscribe_lock_events(&self) -> Result<Receiver<LockEvent>, String> {
+        let (tx, rx) = async_channel::unbounded();
         let mut subscribers = self.lock_events.write().map_err(|e| e.to_string())?;
         subscribers.push(tx);
         Ok(rx)
