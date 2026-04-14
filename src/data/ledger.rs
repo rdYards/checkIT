@@ -1,7 +1,6 @@
-use std::path::Path;
-
 use crate::DEFAULT_FILE_PATH;
 use sl::SecureLedger;
+use std::path::Path;
 
 // Database states for ledgers
 // Used to prevent processes from writing to ledgers at the same time
@@ -12,7 +11,7 @@ pub enum LedgerState {
     SystemLocked(String), // System process that has it locked
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Ledger {
     pub data: SecureLedger,
     pub state: LedgerState,

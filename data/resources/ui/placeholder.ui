@@ -1,46 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="libadwaita" version="1.0"/>
-  <object class="AdwStatusPage" id="placeholder_root">
+  <!-- Use a vertical Box to stack the HeaderBar on top of the StatusPage -->
+  <object class="GtkBox" id="placeholder_root">
+    <property name="orientation">vertical</property>
+    <property name="vexpand">True</property>
+
+    <!-- 1. The Header Bar -->
     <child>
-      <object class="GtkWindowHandle">
+      <object class="AdwHeaderBar" />
+    </child>
+
+    <!-- 2. The Main Content (Status Page) -->
+    <child>
+      <object class="AdwStatusPage">
         <property name="vexpand">True</property>
+        <property name="halign">center</property>
+        <property name="valign">center</property>
+        <property name="icon-name">folder-new-symbolic</property>
+        <property name="title" translatable="yes">No Ledgers</property>
+        <property name="description" translatable="yes">
+          Create a Secure Ledger to get started.
+        </property>
         <property name="child">
-          <object class="AdwStatusPage">
-            <property name="icon-name">folder-new-symbolic</property>
-            <property name="title" translatable="yes">No Ledgers</property>
-            <property name="description" translatable="yes">
-              Create a Secure Ledger to get started.
-            </property>
-            <property name="child">
-              <object class="GtkBox">
-                <property name="orientation">vertical</property>
-                <property name="spacing">6</property>
-                <child>
-                  <object class="GtkButton">
-                    <property name="label" translatable="yes">_New Ledger</property>
-                    <property name="use-underline">True</property>
-                    <property name="halign">center</property>
-                    <property name="action-name">win.new-ledger</property>
-                    <style>
-                      <class name="pill" />
-                      <class name="suggested-action" />
-                    </style>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton">
-                    <property name="label" translatable="yes">_Load Ledger</property>
-                    <property name="use-underline">True</property>
-                    <property name="halign">center</property>
-                    <property name="action-name">win.load-ledger</property>
-                    <style>
-                      <class name="pill" />
-                    </style>
-                  </object>
-                </child>
+          <object class="GtkBox">
+            <property name="halign">center</property>
+            <property name="valign">center</property>
+            <property name="orientation">horizontal</property>
+            <property name="spacing">6</property>
+            <child>
+              <object class="GtkButton">
+                <property name="label" translatable="yes">_New Ledger</property>
+                <property name="use-underline">True</property>
+                <property name="halign">center</property>
+                <property name="action-name">win.new-ledger</property>
+                <style>
+                  <class name="pill" />
+                  <class name="suggested-action" />
+                </style>
               </object>
-            </property>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="label" translatable="yes">_Load Ledger</property>
+                <property name="use-underline">True</property>
+                <property name="halign">center</property>
+                <property name="action-name">win.load-ledger</property>
+                <style>
+                  <class name="pill" />
+                </style>
+              </object>
+            </child>
           </object>
         </property>
       </object>

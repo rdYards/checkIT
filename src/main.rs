@@ -1,8 +1,6 @@
-mod actions;
 mod app;
-mod ledger;
-mod ledger_db;
-mod page;
+mod data;
+mod ui;
 
 use adw::{Application, gio, gio::Resource, gio::prelude::*, glib};
 use std::path::Path;

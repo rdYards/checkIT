@@ -1,19 +1,22 @@
 use adw::{
-    Application, ApplicationWindow, ViewStack, gdk,
+    AlertDialog, Application, ApplicationWindow, EntryRow, PasswordEntryRow, PreferencesGroup,
+    ResponseAppearance, ViewStack,
     gdk::Display,
+    gio,
     gio::{ActionEntry, Settings},
-    glib,
     glib::clone,
+    prelude::*,
 };
-use gtk::{Builder, IconTheme, ListBox, Widget, prelude::*};
+use gtk::{Builder, CssProvider, FileDialog, IconTheme};
 use std::sync::Arc;
 
 use crate::{
-    APP_ID, actions,
-    ledger_db::{LedgerBannerInfo, LedgerDatabase, LockEvent},
-    page::PageManager,
+    APP_ID,
+    data::{data_model::DataModel, ledger_db::LedgerDatabase},
+    ui::page::PageManager,
 };
 
+/// Builds and runs the main application.
 pub fn build_app(app: &Application) {
     // Import icon themes to use
     let display = Display::default().expect("Couldn't get default display");
@@ -28,7 +31,7 @@ pub fn build_app(app: &Application) {
 
     let builder = Builder::new();
 
-    // Load window.ui fir main page
+    // Load window.ui for main page
     builder
         .add_from_resource("/org/gtk_rs/CheckIT/window.ui")
         .expect("Failed to load window.ui");
@@ -44,7 +47,7 @@ pub fn build_app(app: &Application) {
         .expect("Failed to load placeholder.ui");
 
     // The actual placeholder content from placeholder.ui
-    let placeholder_root: Widget = builder
+    let placeholder_root: gtk::Widget = builder
         .object("placeholder_root")
         .expect("Failed to get placeholder_root");
 
@@ -53,7 +56,7 @@ pub fn build_app(app: &Application) {
     let view_stack: ViewStack = builder
         .object("view_stack")
         .expect("Failed to get view_stack");
-    let button_container: ListBox = builder
+    let button_container: gtk::ListBox = builder
         .object("ledger_list")
         .expect("Failed to get ledger_banner_container");
     button_container.set_property("name", "banner_box");
@@ -61,8 +64,16 @@ pub fn build_app(app: &Application) {
     // Create LedgerDatabase, used for ledger management
     let db = Arc::new(LedgerDatabase::new());
 
+    // Create DataModel, used for reactive UI state
+    let data_model = DataModel::new(db.clone());
+
     // Create PageManager, used to manage Ledger Pages
-    let mut page_manager = PageManager::new(view_stack.clone(), button_container);
+    let _page_manager = PageManager::new(
+        view_stack.clone(),
+        button_container,
+        data_model.clone(),
+        db.clone(),
+    );
 
     // Create placeholder.ui for app startup
     view_stack.add_titled(&placeholder_root, Some("placeholder"), "No Ledgers");
@@ -71,57 +82,20 @@ pub fn build_app(app: &Application) {
     window.set_application(Some(app));
 
     let settings = Settings::new(APP_ID);
-
     load_window_size(&window, &settings);
 
-    setup_actions(&window, db.clone());
-
-    // Subscribe events for db and UI
-    let receiver = db
-        .subscribe_lock_events()
-        .expect("Failed to subscribe to events");
-    let window_clone = window.clone();
-    let db_clone = db.clone();
-    let mut page_manager_clone = page_manager.clone();
-
-    glib::MainContext::default().spawn_local(async move {
-        while let Ok(event) = receiver.recv().await {
-            match event {
-                LockEvent::LedgerAdded(ledger_key) => {
-                    if let Ok(Some(ledger)) = db_clone.request_ledger(&ledger_key, "ui", true) {
-                        let info = LedgerBannerInfo {
-                            key: ledger_key.clone(),
-                            title: ledger.data.meta.title.clone(),
-                            state: ledger.state.clone(),
-                        };
-                        if let Err(e) =
-                            page_manager_clone.create_ledger_page_and_banner(&ledger, &info)
-                        {
-                            actions::popup_alert(
-                                &window_clone,
-                                "Error Creating Ledger",
-                                &format!("Error: {}", e),
-                            );
-                        }
-                        page_manager_clone.show_page(&ledger_key);
-                        page_manager_clone.highlight_active_button(&ledger_key);
-                    }
-                }
-                LockEvent::LedgerRemoved(ledger_key) => {
-                    page_manager_clone.remove_page(&ledger_key);
-                }
-                _ => {}
-            }
-        }
-        // When the channel is closed, the loop ends and the task terminates.
-        // This allows the application to shut down cleanly.
-    });
+    setup_actions(&window, db);
 
     window.present();
 }
 
+/// Sets up global application shortcuts.
+fn setup_shortcuts(app: &Application) {
+    app.set_accels_for_action("win.close", &["<Ctrl>W"]);
+}
+
+/// Sets up application actions (e.g., "new-ledger", "load-ledger").
 fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>) {
-    // Add all actions to ApplicationWindow
     window.add_action_entries([
         // Action to create new Ledger
         ActionEntry::builder("new-ledger")
@@ -131,7 +105,47 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>) {
                 #[strong]
                 db,
                 move |_, _, _| {
-                    actions::new_ledger(window, db.clone());
+                    let dialog =
+                        AlertDialog::new(Some("Create New Ledger"), Some("Please enter details"));
+                    dialog.add_response("cancel", "Cancel");
+                    dialog.add_response("create", "Create");
+                    dialog.set_response_appearance("create", ResponseAppearance::Suggested);
+                    dialog.set_response_appearance("cancel", ResponseAppearance::Destructive);
+
+                    let title_entry = EntryRow::new();
+                    title_entry.set_title("Title");
+                    let desc_entry = EntryRow::new();
+                    desc_entry.set_title("Description");
+                    let pass_entry = PasswordEntryRow::new();
+                    pass_entry.set_title("Password");
+
+                    let content = PreferencesGroup::new();
+                    content.add(&title_entry);
+                    content.add(&desc_entry);
+                    content.add(&pass_entry);
+                    dialog.set_extra_child(Some(&content));
+
+                    let db_clone = db.clone();
+                    let window_clone_close = window.clone();
+
+                    dialog.choose(
+                        Some(&window_clone_close),
+                        None::<&gio::Cancellable>,
+                        move |response| {
+                            if response == "create" {
+                                let title = title_entry.text().to_string();
+                                let desc = desc_entry.text().to_string();
+                                let pass = pass_entry.text().to_string();
+                                if title.is_empty() || pass.is_empty() {
+                                    popup_alert(&window, "Error", "Fields cannot be empty");
+                                    return;
+                                }
+                                if let Err(e) = db_clone.create_ledger(title, desc, pass) {
+                                    popup_alert(&window, "Error", &e);
+                                }
+                            }
+                        },
+                    );
                 }
             ))
             .build(),
@@ -143,49 +157,87 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>) {
                 #[strong]
                 db,
                 move |_, _, _| {
-                    actions::load_ledger(window, db.clone());
+                    let file_dialog = FileDialog::new();
+                    file_dialog.set_title("Select Ledger");
+
+                    let window_clone_close = window.clone();
+                    let db_clone = db.clone();
+
+                    file_dialog.open(
+                        Some(&window_clone_close),
+                        None::<&gio::Cancellable>,
+                        move |result| {
+                            if let Ok(file) = result {
+                                let path = file
+                                    .path()
+                                    .unwrap_or_default()
+                                    .to_string_lossy()
+                                    .to_string();
+
+                                let dialog = AlertDialog::new(
+                                    Some("Enter Password"),
+                                    Some("Enter password to import ledger"),
+                                );
+                                let pass_entry = PasswordEntryRow::new();
+                                dialog.set_extra_child(Some(&pass_entry));
+                                dialog.add_response("cancel", "Cancel");
+                                dialog.add_response("import", "Import");
+                                dialog
+                                    .set_response_appearance("import", ResponseAppearance::Default);
+                                dialog.set_response_appearance(
+                                    "cancel",
+                                    ResponseAppearance::Destructive,
+                                );
+
+                                let window_clone_close = window.clone();
+
+                                dialog.choose(
+                                    Some(&window_clone_close),
+                                    None::<&gio::Cancellable>,
+                                    move |response| {
+                                        if response == "import" {
+                                            if let Err(e) = db_clone.import_ledger(
+                                                path.clone(),
+                                                pass_entry.text().to_string(),
+                                            ) {
+                                                popup_alert(&window, "Import Error", &e);
+                                            }
+                                        }
+                                    },
+                                );
+                            }
+                        },
+                    );
                 }
             ))
             .build(),
     ]);
 }
 
-fn setup_shortcuts(app: &adw::Application) {
-    app.set_accels_for_action("win.close", &["<Ctrl>W"]);
+/// Shows a popup alert dialog.
+pub fn popup_alert(window: &ApplicationWindow, title: &str, msg: &str) {
+    let dialog = AlertDialog::new(Some(title), if msg.is_empty() { None } else { Some(msg) });
+    dialog.add_response("ok", "OK");
+    dialog.set_default_response(Some("ok"));
+    dialog.present(Some(window));
 }
 
-// TODO! Need to implement at a later data
-// pub fn save_window_size(&self) -> Result<(), glib::BoolError> {
-//     // Get the size of the window
-//     let size = self.window.default_size();
-
-//     // Set the window state in `settings`
-//     self.settings().set_int("window-width", size.0)?;
-//     self.settings().set_int("window-height", size.1)?;
-//     self.settings()
-//         .set_boolean("is-maximized", self.window.is_maximized())?;
-
-//     Ok(())
-// }
-
+/// Loads the window size from settings.
 fn load_window_size(window: &ApplicationWindow, settings: &Settings) {
-    // Retrieve window state from settings
     let width = settings.int("window-width");
     let height = settings.int("window-height");
     let is_maximized = settings.boolean("is-maximized");
-
     window.set_default_size(width, height);
-
     if is_maximized {
         window.maximize();
     }
 }
 
+/// Loads the CSS provider.
 fn load_css() {
-    let provider = gtk::CssProvider::new();
+    let provider = CssProvider::new();
     provider.load_from_resource("/org/gtk_rs/CheckIT/style.css");
-
-    if let Some(display) = gdk::Display::default() {
+    if let Some(display) = Display::default() {
         gtk::style_context_add_provider_for_display(
             &display,
             &provider,
