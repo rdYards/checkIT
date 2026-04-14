@@ -90,7 +90,6 @@ impl LedgerDatabase {
     pub fn add_entry_to_ledger(
         &self,
         key: String,
-        password: String,
         genre: String,
         data: String,
     ) -> Result<(), String> {
@@ -98,7 +97,7 @@ impl LedgerDatabase {
         if let Some(ledger) = ledgers.get_mut(&key) {
             ledger
                 .data
-                .create_entry(&password, genre, data)
+                .create_entry(genre, data)
                 .map_err(|e| e.to_string())?;
 
             println!("[DEBUG] About to emit LedgerUpdated event for key: {}", key);
@@ -119,14 +118,13 @@ impl LedgerDatabase {
     pub fn remove_entry_from_ledger(
         &self,
         key: String,
-        password: String,
         entry_id: String,
     ) -> Result<(), String> {
         let mut ledgers = self.ledgers.write().map_rel_err()?;
         if let Some(ledger) = ledgers.get_mut(&key) {
             ledger
                 .data
-                .remove_entry(&entry_id, &password)
+                .remove_entry(&entry_id)
                 .map_err(|e| e.to_string())?;
             self.emit(LockEvent::LedgerUpdated(key));
             Ok(())

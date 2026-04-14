@@ -195,16 +195,15 @@ impl PageManager {
     }
 
     // Add a method to handle entry creation
-    pub fn on_add_entry(&self, key: &str, password: &str, genre: &str, data: &str) {
+    pub fn on_add_entry(&self, key: &str, genre: &str, data: &str) {
         let db = self.db.clone();
         let key = key.to_string();
-        let password = password.to_string();
         let genre = genre.to_string();
         let data = data.to_string();
         let view_stack = self.view_stack.clone();
 
         glib::MainContext::default().spawn_local(async move {
-            match db.add_entry_to_ledger(key, password, genre, data) {
+            match db.add_entry_to_ledger(key, genre, data) {
                 Ok(_) => {
                     PageManager::page_popup_alert(&view_stack, "Entry added successfully", "");
                 }
@@ -220,15 +219,14 @@ impl PageManager {
     }
 
     // Add a method to handle entry removal
-    pub fn on_remove_entry(&self, key: &str, password: &str, entry_id: &str) {
+    pub fn on_remove_entry(&self, key: &str, entry_id: &str) {
         let db = self.db.clone();
         let key = key.to_string();
-        let password = password.to_string();
         let entry_id = entry_id.to_string();
         let view_stack = self.view_stack.clone();
 
         glib::MainContext::default().spawn_local(async move {
-            match db.remove_entry_from_ledger(key, password, entry_id) {
+            match db.remove_entry_from_ledger(key, entry_id) {
                 Ok(_) => {
                     PageManager::page_popup_alert(&view_stack, "Entry removed successfully", "");
                 }
@@ -351,13 +349,10 @@ impl PageManager {
                 genre_entry.set_title("Genre");
                 let data_entry = EntryRow::new();
                 data_entry.set_title("Data");
-                let pass_entry = PasswordEntryRow::new();
-                pass_entry.set_title("Password");
 
                 let content = PreferencesGroup::new();
                 content.add(&genre_entry);
                 content.add(&data_entry);
-                content.add(&pass_entry);
                 dialog.set_extra_child(Some(&content));
 
                 dialog.add_response("cancel", "Cancel");
@@ -373,10 +368,9 @@ impl PageManager {
                         if response == "add" {
                             let genre = genre_entry.text().to_string();
                             let data = data_entry.text().to_string();
-                            let password = pass_entry.text().to_string();
 
                             // Validate all fields
-                            if genre.is_empty() || data.is_empty() || password.is_empty() {
+                            if genre.is_empty() || data.is_empty() {
                                 PageManager::page_popup_alert(
                                     &manager_clone.view_stack,
                                     "Error",
@@ -387,7 +381,7 @@ impl PageManager {
 
                             let key = manager_clone.state.borrow().current_ledger_key.clone();
                             if let Some(key) = key {
-                                manager_clone.on_add_entry(&key, &password, &genre, &data);
+                                manager_clone.on_add_entry(&key, &genre, &data);
                             }
                         }
                     },
@@ -441,10 +435,8 @@ impl PageManager {
                             None::<&gio::Cancellable>,
                             move |response| {
                                 if response == "remove" {
-                                    let password = "".to_string(); // TODO: Replace with actual password retrieval
                                     manager_clone.on_remove_entry(
                                         &ledger_key_clone,
-                                        &password,
                                         &entry_id_clone,
                                     );
 
