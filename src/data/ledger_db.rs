@@ -115,11 +115,7 @@ impl LedgerDatabase {
     }
 
     /// Removes an entry from a ledger and emits an event.
-    pub fn remove_entry_from_ledger(
-        &self,
-        key: String,
-        entry_id: String,
-    ) -> Result<(), String> {
+    pub fn remove_entry_from_ledger(&self, key: String, entry_id: String) -> Result<(), String> {
         let mut ledgers = self.ledgers.write().map_rel_err()?;
         if let Some(ledger) = ledgers.get_mut(&key) {
             ledger

@@ -1,15 +1,16 @@
 use adw::{
-    ActionRow, AlertDialog, EntryRow, HeaderBar, NavigationPage, PasswordEntryRow,
-    PreferencesGroup, ResponseAppearance, ToolbarView, ViewStack, gio,
+    ActionRow, AlertDialog, ComboRow, EntryRow, HeaderBar, NavigationPage, PreferencesGroup,
+    ResponseAppearance, ToolbarView, ViewStack, gio,
     gio::Cancellable,
     glib,
     prelude::{
-        ActionRowExt, AlertDialogExt, AlertDialogExtManual, PreferencesGroupExt, PreferencesRowExt,
+        ActionRowExt, AlertDialogExt, AlertDialogExtManual, ComboRowExt, PreferencesGroupExt,
+        PreferencesRowExt,
     },
 };
 use gtk::{
-    Align, Box as GTKBox, Button, Entry, Image, Label, ListBox, Orientation, SelectionMode, Widget,
-    prelude::*,
+    Align, Box as GTKBox, Button, Entry, Image, Label, ListBox, Orientation, SelectionMode,
+    StringList, Widget, prelude::*,
 };
 use sl::types::LedgerEntry;
 use std::{cell::RefCell, collections, collections::HashMap, rc::Rc, sync::Arc};
@@ -157,7 +158,7 @@ impl PageManager {
                                 manager.show_page(&key);
                             }
                         ));
-                        
+
                         let key_for_ui = key.clone();
 
                         // Insert into state
@@ -195,7 +196,7 @@ impl PageManager {
     }
 
     // Add a method to handle entry creation
-    pub fn on_add_entry(&self, key: &str, genre: &str, data: &str) {
+    fn on_add_entry(&self, key: &str, genre: &str, data: &str) {
         let db = self.db.clone();
         let key = key.to_string();
         let genre = genre.to_string();
@@ -219,7 +220,7 @@ impl PageManager {
     }
 
     // Add a method to handle entry removal
-    pub fn on_remove_entry(&self, key: &str, entry_id: &str) {
+    fn on_remove_entry(&self, key: &str, entry_id: &str) {
         let db = self.db.clone();
         let key = key.to_string();
         let entry_id = entry_id.to_string();
@@ -242,7 +243,7 @@ impl PageManager {
     }
 
     /// Shows the page with the given key.
-    pub fn show_page(&self, key: &str) {
+    fn show_page(&self, key: &str) {
         let page = {
             let state = self.state.borrow_mut();
             state.pages.get(key).cloned()
@@ -258,7 +259,7 @@ impl PageManager {
     }
 
     /// Highlights the active button.
-    pub fn highlight_active_button(&self, key: &str) {
+    fn highlight_active_button(&self, key: &str) {
         let state = self.state.borrow();
         for button in state.button_map.values() {
             button.remove_css_class("active");
@@ -269,7 +270,7 @@ impl PageManager {
     }
 
     /// Reveals the placeholder if no ledgers are available.
-    pub fn reveal_placeholder(&self) {
+    fn reveal_placeholder(&self) {
         let has_pages = {
             let state = self.state.borrow();
             !state.pages.is_empty()
@@ -343,15 +344,27 @@ impl PageManager {
             #[strong]
             manager,
             move |_| {
+                // Define genre tags (related to Gitops)
+                let git_tags = vec![
+                    "add", "remove", "modify", "commit", "push", "pull", "init", "merge", "branch",
+                    "stash", "reset", "tag", "fetch", "clone", "status", "log", "diff",
+                ];
+
                 // Show a dialog to enter entry details
                 let dialog = AlertDialog::new(Some("Add Entry"), Some("Enter entry details"));
-                let genre_entry = EntryRow::new();
-                genre_entry.set_title("Genre");
-                let data_entry = EntryRow::new();
-                data_entry.set_title("Data");
+
+                // Create a dropdown for Git tags
+                let genre_combo = ComboRow::new();
+                genre_combo.set_title("Genre");
+
+                // Create a string list for the dropdown
+                let list = StringList::new(&git_tags);
+                genre_combo.set_model(Some(&list));
 
                 let content = PreferencesGroup::new();
-                content.add(&genre_entry);
+                content.add(&genre_combo);
+                let data_entry = EntryRow::new();
+                data_entry.set_title("Data");
                 content.add(&data_entry);
                 dialog.set_extra_child(Some(&content));
 
@@ -366,7 +379,13 @@ impl PageManager {
                     None::<&gio::Cancellable>,
                     move |response| {
                         if response == "add" {
-                            let genre = genre_entry.text().to_string();
+                            let genre = genre_combo
+                                .selected_item()
+                                .and_then(|item| {
+                                    item.downcast_ref::<gtk::StringObject>()
+                                        .map(|obj| obj.string().to_string())
+                                })
+                                .unwrap_or_default();
                             let data = data_entry.text().to_string();
 
                             // Validate all fields
@@ -435,10 +454,8 @@ impl PageManager {
                             None::<&gio::Cancellable>,
                             move |response| {
                                 if response == "remove" {
-                                    manager_clone.on_remove_entry(
-                                        &ledger_key_clone,
-                                        &entry_id_clone,
-                                    );
+                                    manager_clone
+                                        .on_remove_entry(&ledger_key_clone, &entry_id_clone);
 
                                     manager_clone.state.borrow_mut().selected_entry = None;
                                 }
@@ -512,10 +529,10 @@ impl PageManager {
             content_box.set_margin_end(6);
 
             let genre_label = Label::new(Some(&entry.genre));
-            genre_label.add_css_class("entry-genre");
+            genre_label.add_css_class("genre-pill");
+            genre_label.add_css_class(&format!("genre-{}", entry.genre.to_lowercase()));
 
             let data_label = Label::new(Some(&entry.data));
-            data_label.add_css_class("entry-data");
             data_label.set_wrap(true);
 
             content_box.append(&genre_label);
@@ -595,7 +612,7 @@ impl PageManager {
     }
 
     /// Shows a popup alert dialog.
-    pub fn page_popup_alert(window: &ViewStack, title: &str, msg: &str) {
+    fn page_popup_alert(window: &ViewStack, title: &str, msg: &str) {
         let dialog = AlertDialog::new(Some(title), if msg.is_empty() { None } else { Some(msg) });
         dialog.add_response("ok", "OK");
         dialog.set_default_response(Some("ok"));
