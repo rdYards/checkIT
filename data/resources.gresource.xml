@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <gresources>
   <gresource prefix="/org/gtk_rs/CheckIT">
-    <file alias="style.css">resources/style.css</file>
-    
+    <file alias="org.gtk-rs.CheckIT.svg">resources/org.gtk-rs.CheckIT.svg</file>
+  
     <!-- UI Files -->
+    <file alias="style.css">resources/style.css</file>
     <file alias="window.ui">resources/ui/window.ui</file>
     <file alias="placeholder.ui">resources/ui/placeholder.ui</file>
   </gresource>

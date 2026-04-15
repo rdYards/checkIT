@@ -1,13 +1,13 @@
 use adw::{
-    AlertDialog, Application, ApplicationWindow, EntryRow, PasswordEntryRow, PreferencesGroup,
-    ResponseAppearance, ViewStack,
+    AboutDialog, AlertDialog, Application, ApplicationWindow, EntryRow, PasswordEntryRow,
+    PreferencesGroup, ResponseAppearance, ViewStack,
     gdk::Display,
     gio,
     gio::{ActionEntry, Settings},
     glib::clone,
     prelude::*,
 };
-use gtk::{Builder, CssProvider, FileDialog, IconTheme};
+use gtk::{Builder, CssProvider, FileDialog, IconTheme, License, ListBox, Widget};
 use std::sync::Arc;
 
 use crate::{
@@ -21,7 +21,7 @@ pub fn build_app(app: &Application) {
     // Import icon themes to use
     let display = Display::default().expect("Couldn't get default display");
     let icon_theme = IconTheme::for_display(&display);
-    icon_theme.add_resource_path("/org/gtk_rs/CheckIT/icons");
+    icon_theme.add_resource_path("/org/gtk_rs/CheckIT/");
 
     // Load CSS provider
     load_css();
@@ -47,7 +47,7 @@ pub fn build_app(app: &Application) {
         .expect("Failed to load placeholder.ui");
 
     // The actual placeholder content from placeholder.ui
-    let placeholder_root: gtk::Widget = builder
+    let placeholder_root: Widget = builder
         .object("placeholder_root")
         .expect("Failed to get placeholder_root");
 
@@ -56,7 +56,7 @@ pub fn build_app(app: &Application) {
     let view_stack: ViewStack = builder
         .object("view_stack")
         .expect("Failed to get view_stack");
-    let button_container: gtk::ListBox = builder
+    let button_container: ListBox = builder
         .object("ledger_list")
         .expect("Failed to get ledger_banner_container");
     button_container.set_property("name", "banner_box");
@@ -80,6 +80,7 @@ pub fn build_app(app: &Application) {
     view_stack.set_visible_child_name("placeholder");
 
     window.set_application(Some(app));
+    window.set_icon_name(Some("org.gtk-rs.CheckIT"));
 
     let settings = Settings::new(APP_ID);
     load_window_size(&window, &settings);
@@ -97,6 +98,26 @@ fn setup_shortcuts(app: &Application) {
 /// Sets up application actions (e.g., "new-ledger", "load-ledger").
 fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>) {
     window.add_action_entries([
+        // Action to show About dialog
+        ActionEntry::builder("show-about")
+            .activate(clone!(
+                #[weak]
+                window,
+                move |_, _, _| {
+                    let about = AboutDialog::builder()
+                        .application_name("CheckIT")
+                        .application_icon("org.gtk-rs.CheckIT")
+                        .version(env!("CARGO_PKG_VERSION"))
+                        .license_type(License::Gpl20)
+                        .website("https://github.com/gtk-rs/checkit")
+                        .issue_url("https://github.com/rdYards/checkIT/issues")
+                        .developer_name("Alexander Eastman")
+                        .build();
+
+                    about.present(Some(&window));
+                }
+            ))
+            .build(),
         // Action to create new Ledger
         ActionEntry::builder("new-ledger")
             .activate(clone!(

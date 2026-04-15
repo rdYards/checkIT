@@ -44,7 +44,7 @@
                         </child>
                       </object>
                     </child>
-                    <!-- Button Navication for ledger pages -->
+                    <!-- PageManger.button_map located here -->
                     <child>
                       <object class="GtkListBox" id="ledger_list">
                         <property name="selection-mode">none</property>
@@ -59,7 +59,7 @@
               <object class="AdwNavigationPage">
                 <property name="title" translatable="yes">Ledger Pages</property>
                 <child>
-                    <!-- PageManger works in this location -->
+                    <!-- PageManger.pages located here -->
                     <object class="AdwViewStack" id="view_stack" />
                 </child>
               </object>

@@ -3,6 +3,7 @@ use std::path::Path;
 
 fn main() {
     // Re-run build if resource files change
+    println!("cargo:rerun-if-changed=data/resources/org.gtk-rs.CheckIT.svg");
     println!("cargo:rerun-if-changed=data/resources.gresource.xml");
     println!("cargo:rerun-if-changed=data/resources/ui/window.ui");
     println!("cargo:rerun-if-changed=data/resources/style.css");

@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="libadwaita" version="1.0"/>
-  <!-- Use a vertical Box to stack the HeaderBar on top of the StatusPage -->
   <object class="GtkBox" id="placeholder_root">
     <property name="orientation">vertical</property>
     <property name="vexpand">True</property>
 
-    <!-- 1. The Header Bar -->
+    <!-- The Header Bar -->
     <child>
-      <object class="AdwHeaderBar" />
-    </child>
+          <object class="AdwHeaderBar">
+          <child type="end">
+            <object class="GtkButton">
+              <property name="icon-name">help-about-symbolic</property>
+              <property name="tooltip-text" translatable="yes">About CheckIT</property>
+              <property name="action-name">win.show-about</property>
+            </object>
+          </child>
+          </object>
+        </child>
 
-    <!-- 2. The Main Content (Status Page) -->
+    <!-- The Main Content -->
     <child>
       <object class="AdwStatusPage">
         <property name="vexpand">True</property>

@@ -27,7 +27,6 @@ pub struct PageManagerState {
     pub button_map: HashMap<String, Button>,
     pub selected_entry: Option<String>,
     pub search_query: String,
-    pub search_entries: HashMap<String, Entry>,
     pub current_ledger_key: Option<String>,
 }
 
@@ -59,7 +58,6 @@ impl PageManager {
                 button_map: HashMap::new(),
                 selected_entry: None,
                 search_query: String::new(),
-                search_entries: HashMap::new(),
                 current_ledger_key: None,
             })),
         });
@@ -349,6 +347,13 @@ impl PageManager {
         header_bar.set_show_title(true);
         header_bar.set_show_back_button(false);
         header_bar.set_show_end_title_buttons(true);
+
+        let about_button = Button::new();
+        about_button.set_icon_name("help-about-symbolic");
+        about_button.set_tooltip_text(Some("About"));
+        about_button.set_action_name(Some("win.show-about"));
+
+        header_bar.pack_end(&about_button);
         toolbar_view.add_top_bar(&header_bar);
 
         let content_box = GTKBox::new(Orientation::Vertical, 0);
