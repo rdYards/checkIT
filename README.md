@@ -23,7 +23,7 @@ Still in development
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/checkit.git
+   git clone https://github.com/rdYards/checkIT.git
    cd checkit
    ```
 
