@@ -27,6 +27,7 @@ pub struct PageManagerState {
     pub button_map: HashMap<String, Button>,
     pub selected_entry: Option<String>,
     pub search_query: String,
+    pub search_entries: HashMap<String, Entry>,
     pub current_ledger_key: Option<String>,
 }
 
@@ -58,6 +59,7 @@ impl PageManager {
                 button_map: HashMap::new(),
                 selected_entry: None,
                 search_query: String::new(),
+                search_entries: HashMap::new(),
                 current_ledger_key: None,
             })),
         });
@@ -177,10 +179,39 @@ impl PageManager {
                     for ledger in to_update {
                         if let Some(container) = list_containers.get(&ledger.banner.key) {
                             if let Some(ref data) = ledger.data {
-                                // No borrow held here!
+                                let search_query = {
+                                    let state = manager.state.borrow();
+                                    state.search_query.clone()
+                                };
+
+                                // Filter entries based on current search query
+                                let filtered_entries = if search_query.is_empty() {
+                                    data.data.ledger.to_vec()
+                                } else {
+                                    data.data
+                                        .ledger
+                                        .iter()
+                                        .filter(|entry| {
+                                            entry
+                                                .id
+                                                .to_lowercase()
+                                                .contains(&search_query.to_lowercase())
+                                                || entry
+                                                    .genre
+                                                    .to_lowercase()
+                                                    .contains(&search_query.to_lowercase())
+                                                || entry
+                                                    .data
+                                                    .to_lowercase()
+                                                    .contains(&search_query.to_lowercase())
+                                        })
+                                        .cloned()
+                                        .collect()
+                                };
+
                                 if let Err(e) = PageManager::build_entry_list(
                                     &manager,
-                                    &data.data.ledger,
+                                    &filtered_entries,
                                     container,
                                 ) {
                                     println!("[DEBUG] Error rebuilding entry list: {}", e);
@@ -466,13 +497,7 @@ impl PageManager {
             }
         ));
 
-        // Add search bar
-        let search_entry = Entry::new();
-        search_entry.set_placeholder_text(Some("Search by genre, id, or data"));
-        search_entry.set_hexpand(true);
-        search_entry.set_margin_start(10);
-        action_toolbar.append(&search_entry);
-
+        // ledger_content && ledger_content_container are out of order to work with search_entry
         let ledger_content = GTKBox::new(Orientation::Vertical, 12);
         ledger_content.set_hexpand(true);
         ledger_content.set_vexpand(true);
@@ -480,6 +505,69 @@ impl PageManager {
         let ledger_content_container = GTKBox::new(Orientation::Vertical, 12);
         ledger_content_container.set_hexpand(true);
         ledger_content_container.set_vexpand(true);
+
+        // Add search bar
+        let search_entry = Entry::new();
+        search_entry.set_placeholder_text(Some("Search by genre, id, or data"));
+        search_entry.set_hexpand(true);
+        search_entry.set_margin_start(10);
+        action_toolbar.append(&search_entry);
+
+        search_entry.connect_changed(glib::clone!(
+            #[strong]
+            manager,
+            #[strong]
+            ledger_content_container,
+            move |search_entry| {
+                let search_query = search_entry.text().to_string();
+
+                let current_key = {
+                    let state = manager.state.borrow();
+                    state.current_ledger_key.clone()
+                };
+
+                if let Some(current_key) = current_key {
+                    manager.state.borrow_mut().search_query = search_query.clone();
+                    let ledger_data = manager.db.get_ledger_data(&current_key);
+
+                    if let Some(ledger) = ledger_data {
+                        let filtered_entries = if search_query.is_empty() {
+                            ledger.data.ledger.to_vec()
+                        } else {
+                            ledger
+                                .data
+                                .ledger
+                                .iter()
+                                .filter(|entry| {
+                                    entry
+                                        .id
+                                        .to_lowercase()
+                                        .contains(&search_query.to_lowercase())
+                                        || entry
+                                            .genre
+                                            .to_lowercase()
+                                            .contains(&search_query.to_lowercase())
+                                        || entry
+                                            .data
+                                            .to_lowercase()
+                                            .contains(&search_query.to_lowercase())
+                                })
+                                .cloned()
+                                .collect()
+                        };
+
+                        // Rebuild the entry list with filtered data
+                        if let Err(e) = PageManager::build_entry_list(
+                            &manager,
+                            &filtered_entries,
+                            &ledger_content_container,
+                        ) {
+                            println!("[DEBUG] Error rebuilding entry list: {}", e);
+                        }
+                    }
+                }
+            }
+        ));
 
         // Build entry list (pure UI)
         if let Some(ref data) = ledger.data {
@@ -508,6 +596,14 @@ impl PageManager {
     ) -> Result<(), glib::Error> {
         while let Some(child) = container.first_child() {
             container.remove(&child);
+        }
+
+        if entries.is_empty() {
+            let no_results_label = Label::new(Some("No matching entries found"));
+            no_results_label.add_css_class("dim-label");
+            no_results_label.set_margin_top(20);
+            container.append(&no_results_label);
+            return Ok(());
         }
 
         let list_box = ListBox::new();
@@ -547,7 +643,6 @@ impl PageManager {
             #[strong]
             manager,
             move |list_box| {
-                // Get the selected row
                 let selected_rows = list_box.selected_rows();
 
                 if let Some(row) = selected_rows.first() {
