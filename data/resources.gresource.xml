@@ -8,15 +8,4 @@
     <file alias="window.ui">resources/ui/window.ui</file>
     <file alias="placeholder.ui">resources/ui/placeholder.ui</file>
   </gresource>
-  
-  <gresource prefix="/org/gtk_rs/CheckIT/icons/scalable/actions/">
-      <file
-            preprocess="xml-stripblanks"
-            alias="padlock2-symbolic.svg"
-        >resources/icons/padlock2-symbolic.svg</file>
-      <file
-            preprocess="xml-stripblanks"
-            alias="padlock2-open-symbolic.svg"
-        >resources/icons/padlock2-open-symbolic.svg</file>
-  </gresource>
 </gresources>
