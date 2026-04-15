@@ -1,14 +1,12 @@
 AdwApplicationWindow {
-    font-family: "Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 14px;
+    font-family: var(--document-font-family);
+    font-size: var(--document-font-size);
 }
 
-AdwHeaderBar,
-GtkHeaderBar {
-    padding: 12px;
-    min-height: 56px;
+AdwHeaderBar {
     background: transparent;
 }
+
 AdwNavigationSplitView {
     min-width: 200px;
 }
@@ -17,52 +15,41 @@ AdwNavigationSplitView {
 AdwEntryRow {
     margin: 6px 0;
     padding: 6px 12px;
-    transition: background-color 0.2s ease;
 }
 
-/* Banner Container Styles */
-#banner_box {
-    padding: 10px;
+/* Nav Buttons */
+.navigation-button {
+    opacity: 0.65;
+    transition:
+        opacity 0.2s ease,
+        background-color 0.2s ease;
+    border-radius: var(--window-radius);
+    padding: 5px 15px;
+    margin: 5px;
 }
 
-#ledger_banner {
-    border-radius: 6px;
-    transition: background-color 0.2s ease;
+.navigation-button.active {
+    opacity: 1;
+    background-color: var(--accent-bg-color);
+    color: var(--accent-fg-color);
 }
 
-/* ListBox and Button styles for navigation */
-#ledger_list {
-    background: transparent;
+.navigation-button.active label,
+.navigation-button.active image {
+    color: var(--fg-color);
 }
 
-#ledger_list button.active {
-    background: var(--accent-color);
-}
-
-/* Navigation page title styles */
-AdwNavigationPage > * > * > .title {
-    font-size: 18px;
-    font-weight: bold;
-    padding: 4px 0;
-}
-
-/* View stack transitions */
-AdwViewStack {
-    transition: opacity 0.3s ease;
-}
-
-/* Focus styles for accessibility */
-:focus {
-    outline: var(--accent-color);
-    outline-offset: 2px;
+/* PageManager CSS */
+.action_bar {
+    padding: 5px;
 }
 
 /* LedgerEntry Actionrows */
 .transparent-list {
     background-color: transparent;
-    background-image: none;
 }
 
+/* Genre Pills */
 .genre-pill {
     border-radius: 12px;
     padding: 5px 10px;
@@ -70,102 +57,97 @@ AdwViewStack {
     font-weight: 900;
     margin-right: 10px;
     margin-bottom: 2px;
-    background-color: var(--accent-color);
-    color: var(--fg-color);
+    background-color: var(--accent-bg-color);
+    color: var(--accent-fg-color);
     min-width: 45px;
 }
 
 /* Specific genre colors */
 .genre-add {
-    background-color: #4caf50;
+    background-color: var(--green-4);
+    color: var(--green-fg-color, #ffffff);
 }
 .genre-remove {
-    background-color: #f44336;
+    background-color: var(--red-4);
+    color: var(--red-fg-color, #ffffff);
 }
 .genre-modify {
-    background-color: #2196f3;
+    background-color: var(--blue-4);
+    color: var(--blue-fg-color, #ffffff);
 }
 .genre-commit {
-    background-color: #9c27b0;
+    background-color: var(--purple-4);
+    color: var(--purple-fg-color, #ffffff);
 }
 .genre-push {
-    background-color: #ff9800;
+    background-color: var(--orange-4);
+    color: var(--orange-fg-color, #ffffff);
 }
 .genre-pull {
-    background-color: #00bcd4;
+    background-color: var(--blue-5);
+    color: var(--blue-fg-color, #ffffff);
 }
 .genre-init {
-    background-color: #795548;
+    background-color: var(--brown-4);
+    color: var(--brown-fg-color, #ffffff);
 }
 .genre-merge {
-    background-color: #607d8b;
+    background-color: var(--blue-3);
+    color: var(--blue-fg-color, #ffffff);
 }
 .genre-branch {
-    background-color: #ffc107;
+    background-color: var(--yellow-4);
+    color: var(--yellow-fg-color, #ffffff);
 }
 .genre-stash {
-    background-color: #e91e63;
+    background-color: var(--purple-1);
+    color: var(--purple-fg-color, #ffffff);
 }
 .genre-reset {
-    background-color: #8bc34a;
+    background-color: var(--green-5);
+    color: var(--green-fg-color, #ffffff);
 }
 .genre-tag {
-    background-color: #4caf50;
+    background-color: var(--green-4);
+    color: var(--green-fg-color, #ffffff);
 }
 .genre-fetch {
-    background-color: #ff5722;
+    background-color: var(--orange-5);
+    color: var(--orange-fg-color, #ffffff);
 }
 .genre-clone {
-    background-color: #009688;
+    background-color: var(--blue-5);
+    color: var(--blue-fg-color, #ffffff);
 }
 .genre-status {
-    background-color: #3f51b5;
+    background-color: var(--blue-5);
+    color: var(--blue-fg-color, #ffffff);
 }
 .genre-log {
-    background-color: #673ab7;
+    background-color: var(--purple-5);
+    color: var(--purple-fg-color, #ffffff);
 }
 .genre-diff {
-    background-color: #03a9f4;
+    background-color: var(--blue-3);
+    color: var(--blue-fg-color, #ffffff);
 }
 
-/* Style the ActionRow containing the genre pills */
+/* ActionRow Styles */
 ActionRow {
     padding: 6px 12px;
-    border-radius: 8px;
+    border-radius: var(--window-radius);
     margin: 4px 0;
-    transition: all 0.2s ease;
 }
 
 ActionRow:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: var(--shade-color);
 }
 
 ActionRow:selected {
-    background-color: rgba(33, 150, 243, 0.1);
+    background-color: color-mix(
+        in srgb,
+        var(--accent-bg-color),
+        transparent 85%
+    );
     border-left: 3px solid var(--accent-color);
-}
-
-/* Style the content box within ActionRow */
-ActionRow .content-box {
-    padding: 4px 0;
-}
-
-/* Nav Buttons */
-.navigation-button {
-    opacity: 0.5;
-    transition:
-        opacity 0.2s ease,
-        background-color 0.2s ease;
-    border-radius: 6px;
-    padding: 5px 10px;
-}
-
-.navigation-button.active {
-    opacity: 1; /* Brings the button back to full visibility */
-    background-color: var(--accent-color);
-}
-
-.navigation-button.active label,
-.navigation-button.active image {
-    color: var(--fg-color);
 }

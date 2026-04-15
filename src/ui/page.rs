@@ -358,10 +358,10 @@ impl PageManager {
         toolbar_view.set_content(Some(&content_box));
 
         // Action toolbar
-        let action_toolbar = GTKBox::new(Orientation::Horizontal, 6);
+        let action_toolbar = GTKBox::new(Orientation::Horizontal, 10);
         action_toolbar.set_halign(Align::Fill);
         action_toolbar.set_valign(Align::Center);
-        action_toolbar.add_css_class("toolbar");
+        action_toolbar.set_css_classes(&["action_bar", "card"]);
         content_box.append(&action_toolbar);
 
         // Create "Add Entry" button
@@ -443,6 +443,7 @@ impl PageManager {
         let remove_button = Button::new();
         remove_button.set_icon_name("edit-delete-symbolic");
         remove_button.set_tooltip_text(Some("Remove selected entry"));
+        remove_button.add_css_class("destructive-action");
         action_toolbar.append(&remove_button);
 
         remove_button.connect_clicked(glib::clone!(
@@ -670,9 +671,9 @@ impl PageManager {
         let container = GTKBox::new(Orientation::Horizontal, 12);
         container.set_property("name", "ledger_banner");
         container.set_hexpand(true);
-        container.add_css_class("navigation-button"); // Maintain your styling
+        container.add_css_class("navigation-button");
 
-        // 2. Add the Click Gesture for navigation
+        // Add the Click Gesture for navigation
         let gesture = GestureClick::new();
         let key_for_gesture = key.to_string();
         let manager_for_gesture = manager.clone();
@@ -688,7 +689,7 @@ impl PageManager {
         ));
         container.add_controller(gesture);
 
-        // --- Inner Content (Same as before) ---
+        // Inner Content
         let drive_icon = Image::from_icon_name("drive-multidisk-symbolic");
         drive_icon.set_property("name", "drive_icon");
         drive_icon.set_halign(Align::Start);
@@ -706,7 +707,7 @@ impl PageManager {
         settings_btn.set_halign(Align::End);
         settings_btn.set_hexpand(false);
 
-        // --- Popover Logic (Remains the same) ---
+        // Popover Logic
         let popover = Popover::new();
         let popover_content = GTKBox::new(Orientation::Vertical, 0);
         popover_content.set_margin_start(6);
@@ -739,7 +740,6 @@ impl PageManager {
         popover.set_child(Some(&popover_content));
         settings_btn.set_popover(Some(&popover));
 
-        // Assemble the container
         container.append(&drive_icon);
         container.append(&label);
         container.append(&settings_btn);
