@@ -674,6 +674,7 @@ impl PageManager {
         button.set_vexpand(false);
         button.set_visible(true);
         button.set_can_focus(true);
+        button.add_css_class("navigation-button");
 
         // Inner button content
         let drive_icon = Image::from_icon_name("drive-multidisk-symbolic");
