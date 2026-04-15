@@ -44,8 +44,10 @@ impl Ledger {
         }
     }
 
-    pub async fn save(&mut self, password: &str) -> Result<(), Box<dyn std::error::Error>> {
-        self.data.upload_to_sl(password).ok();
+    pub fn save(&mut self, password: &str) -> Result<(), Box<dyn std::error::Error>> {
+        self.data
+            .upload_to_sl(password)
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(())
     }
 }

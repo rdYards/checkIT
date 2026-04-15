@@ -9,8 +9,8 @@ use adw::{
     },
 };
 use gtk::{
-    Align, Box as GTKBox, Button, Entry, Image, Label, ListBox, Orientation, SelectionMode,
-    StringList, Widget, prelude::*,
+    Align, Box as GTKBox, Button, Entry, GestureClick, Image, Label, ListBox, MenuButton,
+    Orientation, Popover, SelectionMode, StringList, Widget, prelude::*,
 };
 use sl::types::LedgerEntry;
 use std::{cell::RefCell, collections, collections::HashMap, rc::Rc, sync::Arc};
@@ -24,7 +24,7 @@ use crate::{
 pub struct PageManagerState {
     pub pages: HashMap<String, NavigationPage>,
     pub list_containers: HashMap<String, GTKBox>,
-    pub button_map: HashMap<String, Button>,
+    pub button_map: HashMap<String, GTKBox>,
     pub selected_entry: Option<String>,
     pub search_query: String,
     pub current_ledger_key: Option<String>,
@@ -37,7 +37,7 @@ pub struct PageManager {
     data_model: DataModel,
     db: Arc<LedgerDatabase>,
     // Separate state to allow safe mutation in async blocks
-    state: Rc<RefCell<PageManagerState>>,
+    pub state: Rc<RefCell<PageManagerState>>,
 }
 
 impl PageManager {
@@ -147,17 +147,9 @@ impl PageManager {
                             PageManager::create_page_components(&manager, &ledger)
                                 .expect("Failed to create page components");
 
-                        let button = PageManager::create_navigation_button(&ledger.banner).unwrap();
-
-                        button.connect_clicked(glib::clone!(
-                            #[weak]
-                            manager,
-                            #[strong]
-                            key,
-                            move |_| {
-                                manager.show_page(&key);
-                            }
-                        ));
+                        let button =
+                            PageManager::create_navigation_button(&ledger.banner, &key, &manager)
+                                .unwrap();
 
                         let key_for_ui = key.clone();
 
@@ -235,7 +227,7 @@ impl PageManager {
         glib::MainContext::default().spawn_local(async move {
             match db.add_entry_to_ledger(key, genre, data) {
                 Ok(_) => {
-                    PageManager::page_popup_alert(&view_stack, "Entry added successfully", "");
+                    // Pass if works
                 }
                 Err(e) => {
                     PageManager::page_popup_alert(
@@ -258,7 +250,7 @@ impl PageManager {
         glib::MainContext::default().spawn_local(async move {
             match db.remove_entry_from_ledger(key, entry_id) {
                 Ok(_) => {
-                    PageManager::page_popup_alert(&view_stack, "Entry removed successfully", "");
+                    // Pass if works
                 }
                 Err(e) => {
                     PageManager::page_popup_alert(
@@ -271,6 +263,7 @@ impl PageManager {
         });
     }
 
+    // Pages
     /// Shows the page with the given key.
     fn show_page(&self, key: &str) {
         let page = {
@@ -284,17 +277,6 @@ impl PageManager {
 
             // Then update the current ledger key
             self.state.borrow_mut().current_ledger_key = Some(key.to_string());
-        }
-    }
-
-    /// Highlights the active button.
-    fn highlight_active_button(&self, key: &str) {
-        let state = self.state.borrow();
-        for button in state.button_map.values() {
-            button.remove_css_class("active");
-        }
-        if let Some(button) = state.button_map.get(key) {
-            button.add_css_class("active");
         }
     }
 
@@ -337,6 +319,19 @@ impl PageManager {
         }
     }
 
+    // Buttons
+    /// Highlights the active button.
+    fn highlight_active_button(&self, key: &str) {
+        let state = self.state.borrow();
+        for button in state.button_map.values() {
+            button.remove_css_class("active");
+        }
+        if let Some(button) = state.button_map.get(key) {
+            button.add_css_class("active");
+        }
+    }
+
+    // Create Components
     /// Creates the page components for a ledger
     fn create_page_components(
         manager: &PageManager,
@@ -667,20 +662,36 @@ impl PageManager {
     }
 
     /// Creates NavBtn linked to Page
-    fn create_navigation_button(info: &LedgerBannerInfo) -> Result<Button, glib::Error> {
-        // Main button
-        let button = Button::new();
-        button.set_hexpand(true);
-        button.set_vexpand(false);
-        button.set_visible(true);
-        button.set_can_focus(true);
-        button.add_css_class("navigation-button");
+    fn create_navigation_button(
+        info: &LedgerBannerInfo,
+        key: &str,
+        manager: &PageManager,
+    ) -> Result<GTKBox, glib::Error> {
+        let container = GTKBox::new(Orientation::Horizontal, 12);
+        container.set_property("name", "ledger_banner");
+        container.set_hexpand(true);
+        container.add_css_class("navigation-button"); // Maintain your styling
 
-        // Inner button content
+        // 2. Add the Click Gesture for navigation
+        let gesture = GestureClick::new();
+        let key_for_gesture = key.to_string();
+        let manager_for_gesture = manager.clone();
+
+        gesture.connect_pressed(glib::clone!(
+            #[strong]
+            manager_for_gesture,
+            #[strong]
+            key_for_gesture,
+            move |_, _, _, _| {
+                manager_for_gesture.show_page(&key_for_gesture);
+            }
+        ));
+        container.add_controller(gesture);
+
+        // --- Inner Content (Same as before) ---
         let drive_icon = Image::from_icon_name("drive-multidisk-symbolic");
         drive_icon.set_property("name", "drive_icon");
         drive_icon.set_halign(Align::Start);
-        drive_icon.set_hexpand(false);
 
         let label = Label::new(Some(&info.title));
         label.set_property("name", "network_label");
@@ -688,28 +699,52 @@ impl PageManager {
         label.set_hexpand(true);
 
         let inner_button_content = Image::from_icon_name("application-menu-symbolic");
-        inner_button_content.set_hexpand(true);
-        inner_button_content.set_vexpand(false);
-        inner_button_content.set_tooltip_text(Some("Ledger Actions"));
 
-        let lock_btn = Button::new();
-        lock_btn.set_child(Some(&inner_button_content));
-        lock_btn.set_property("name", "lock_btn");
-        lock_btn.set_halign(Align::End);
-        lock_btn.set_hexpand(false);
+        let settings_btn = MenuButton::new();
+        settings_btn.set_child(Some(&inner_button_content));
+        settings_btn.set_property("name", "settings_btn");
+        settings_btn.set_halign(Align::End);
+        settings_btn.set_hexpand(false);
 
-        // Main Box
-        let content_box = GTKBox::new(Orientation::Horizontal, 12);
-        content_box.set_property("name", "ledger_banner");
-        content_box.set_hexpand(true);
-        content_box.set_homogeneous(false);
+        // --- Popover Logic (Remains the same) ---
+        let popover = Popover::new();
+        let popover_content = GTKBox::new(Orientation::Vertical, 0);
+        popover_content.set_margin_start(6);
+        popover_content.set_margin_end(6);
+        popover_content.set_margin_top(6);
+        popover_content.set_margin_bottom(6);
 
-        content_box.append(&drive_icon);
-        content_box.append(&label);
-        content_box.append(&lock_btn);
+        let actions = vec![
+            ("Save", "document-save-symbolic", "win.save-ledger"),
+            ("Save As", "document-save-as-symbolic", "win.save-as-ledger"),
+            ("Share", "folder-publicshare-symbolic", "win.share-ledger"),
+            ("Remove", "edit-delete-symbolic", "win.remove-ledger"),
+        ];
 
-        button.set_child(Some(&content_box));
-        Ok(button)
+        for (text, icon_name, action_id) in actions {
+            let btn = Button::new();
+            btn.add_css_class("flat");
+            btn.set_action_name(Some(action_id));
+
+            let btn_box = GTKBox::new(Orientation::Horizontal, 12);
+            let icon = Image::from_icon_name(icon_name);
+            let lbl = Label::new(Some(text));
+            btn_box.append(&icon);
+            btn_box.append(&lbl);
+            btn.set_child(Some(&btn_box));
+
+            popover_content.append(&btn);
+        }
+
+        popover.set_child(Some(&popover_content));
+        settings_btn.set_popover(Some(&popover));
+
+        // Assemble the container
+        container.append(&drive_icon);
+        container.append(&label);
+        container.append(&settings_btn);
+
+        Ok(container)
     }
 
     /// Shows a popup alert dialog.

@@ -69,6 +69,31 @@ impl LedgerDatabase {
         Ok(())
     }
 
+    pub fn save_ledger_to_disk(&self, key: &str, password: String) -> Result<(), String> {
+        let mut ledgers = self.ledgers.write().map_err(|e| e.to_string())?;
+        if let Some(ledger) = ledgers.get_mut(key) {
+            ledger.save(&password).map_err(|e| e.to_string())?;
+            // Since we modified the ledger object, we should emit an update event
+            self.emit(LockEvent::LedgerUpdated(key.to_string()));
+            Ok(())
+        } else {
+            Err("Ledger not found".to_string())
+        }
+    }
+
+    pub fn save_ledger_as(&self, key: &str, path: &str, password: String) -> Result<(), String> {
+        let mut ledgers = self.ledgers.write().map_err(|e| e.to_string())?;
+        if let Some(ledger) = ledgers.get_mut(key) {
+            // Update the root path before saving
+            ledger.data.meta.root_path = std::path::PathBuf::from(path);
+            ledger.save(&password).map_err(|e| e.to_string())?;
+            self.emit(LockEvent::LedgerUpdated(key.to_string()));
+            Ok(())
+        } else {
+            Err("Ledger not found".to_string())
+        }
+    }
+
     /// Adds a ledger to the database and emits an event.
     fn add_ledger_internal(&self, key: String, ledger: Ledger) -> Result<(), String> {
         let mut ledgers = self.ledgers.write().map_rel_err()?;
@@ -130,9 +155,6 @@ impl LedgerDatabase {
     }
 
     /// Gets all ledger keys.
-    pub fn get_all_ledger_keys(&self) -> Vec<String> {
-        self.ledgers.read().unwrap().keys().cloned().collect()
-    }
 
     /// Gets ledger information for display in the UI.
     pub fn get_ledger_info(&self, key: &str) -> Option<LedgerBannerInfo> {
