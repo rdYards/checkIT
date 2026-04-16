@@ -2,6 +2,7 @@ use crate::data::ledger::{Ledger, LedgerState};
 use std::{
     collections::HashMap,
     sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard},
+    time::{SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
@@ -18,7 +19,7 @@ pub enum LockEvent {
 pub struct LedgerBannerInfo {
     pub key: String,
     pub title: String,
-    pub state: LedgerState,
+    pub state: LedgerState, // Unused at the moment will be used for future backgroun processing
 }
 
 /// The thread-safe ledger database.
@@ -38,6 +39,17 @@ impl LedgerDatabase {
         }
     }
 
+    /// Generate a short random/unique string to append to ledger keys
+    /// Prevents collisions when importing clones or ledgers with the same name
+    fn generate_unique_id(&self) -> String {
+        let start = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+        // Use the last 16 characters of the nanosecond timestamp as unique suffix
+        format!("{:x}", start).chars().rev().take(16).collect()
+    }
+
     /// Emits a `LockEvent` to all subscribers.
     fn emit(&self, event: LockEvent) {
         if let Ok(events) = self.lock_events.read() {
@@ -54,7 +66,7 @@ impl LedgerDatabase {
         description: String,
         password: String,
     ) -> Result<(), String> {
-        let key = title.clone();
+        let key = format!("{}_{}", title, self.generate_unique_id());
         let ledger = Ledger::new(&password, &title, &description);
         self.add_ledger_internal(key, ledger)?;
         Ok(())
@@ -64,7 +76,7 @@ impl LedgerDatabase {
     pub fn import_ledger(&self, path: String, password: String) -> Result<(), String> {
         let ledger = Ledger::from_file(&password, &path)
             .ok_or_else(|| "Invalid password or file not found".to_string())?;
-        let key = path.clone();
+        let key = format!("{}_{}", path, self.generate_unique_id());
         self.add_ledger_internal(key, ledger)?;
         Ok(())
     }
