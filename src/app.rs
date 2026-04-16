@@ -331,6 +331,70 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: R
                 }
             ))
             .build(),
+        // Action to clone current ledger
+        ActionEntry::builder("clone-ledger")
+            .activate(clone!(
+                #[weak]
+                window,
+                #[strong]
+                db,
+                #[strong]
+                manager,
+                move |_, _, _| {
+                    let key = manager.state.borrow().current_ledger_key.clone();
+                    if let Some(old_key) = key {
+                        let dialog = AlertDialog::new(
+                            Some("Clone Ledger"),
+                            Some("Enter details for the new ledger instance"),
+                        );
+                        dialog.add_response("cancel", "Cancel");
+                        dialog.add_response("clone", "Clone");
+                        dialog.set_response_appearance("clone", ResponseAppearance::Suggested);
+                        dialog.set_response_appearance("cancel", ResponseAppearance::Destructive);
+
+                        let title_entry = EntryRow::new();
+                        title_entry.set_title("New Title");
+
+                        let pass_entry = PasswordEntryRow::new();
+                        pass_entry.set_title("New Password");
+
+                        let content = PreferencesGroup::new();
+                        content.add(&title_entry);
+                        content.add(&pass_entry);
+                        dialog.set_extra_child(Some(&content));
+
+                        let db_clone = db.clone();
+                        let window_clone_close = window.clone();
+
+                        dialog.choose(
+                            Some(&window_clone_close),
+                            None::<&gio::Cancellable>,
+                            move |response| {
+                                if response == "clone" {
+                                    let new_title = title_entry.text().to_string();
+                                    let new_pass = pass_entry.text().to_string();
+
+                                    if new_title.is_empty() || new_pass.is_empty() {
+                                        popup_alert(
+                                            &window,
+                                            "Error",
+                                            "Title and Password cannot be empty",
+                                        );
+                                        return;
+                                    }
+
+                                    if let Err(e) =
+                                        db_clone.clone_ledger(&old_key, new_title, new_pass)
+                                    {
+                                        popup_alert(&window, "Clone Error", &e.to_string());
+                                    }
+                                }
+                            },
+                        );
+                    }
+                }
+            ))
+            .build(),
     ]);
 }
 

@@ -81,11 +81,44 @@ impl LedgerDatabase {
         Ok(())
     }
 
+    /// Clone an existing ledger and adds it to the database
+    pub fn clone_ledger(
+        &self,
+        old_key: &str,
+        new_title: String,
+        new_password: String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        // Fetch existing data using old_key
+        let original_ledger = self
+            .get_ledger_data(old_key)
+            .ok_or("Original ledger not found")?;
+
+        let new_key = format!("{}_{}", new_title, self.generate_unique_id());
+        let description = original_ledger.data.meta.description.clone();
+
+        // Create new Ledger instance with new password and title
+        let mut new_ledger = Ledger::new(&new_password, &new_title, &description);
+
+        // Copy the entries from the old ledger to the new one
+        for entry in &original_ledger.data.ledger {
+            new_ledger
+                .data
+                .create_entry(entry.genre.clone(), entry.data.clone())
+                .map_err(|e| e.to_string())?;
+        }
+
+        self.add_ledger_internal(new_key, new_ledger)
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
+    }
+
+    /// Takes ledger already saved and overrides previous .sl file
     pub fn save_ledger_to_disk(&self, key: &str, password: String) -> Result<(), String> {
         let mut ledgers = self.ledgers.write().map_err(|e| e.to_string())?;
         if let Some(ledger) = ledgers.get_mut(key) {
             ledger.save(&password).map_err(|e| e.to_string())?;
-            // Since we modified the ledger object, we should emit an update event
+            // Emit an update event for Data Model
             self.emit(LockEvent::LedgerUpdated(key.to_string()));
             Ok(())
         } else {
@@ -93,6 +126,7 @@ impl LedgerDatabase {
         }
     }
 
+    /// Saves ledger to a location requested by user
     pub fn save_ledger_as(&self, key: &str, path: &str, password: String) -> Result<(), String> {
         let mut ledgers = self.ledgers.write().map_err(|e| e.to_string())?;
         if let Some(ledger) = ledgers.get_mut(key) {
@@ -167,7 +201,6 @@ impl LedgerDatabase {
     }
 
     /// Gets all ledger keys.
-
     /// Gets ledger information for display in the UI.
     pub fn get_ledger_info(&self, key: &str) -> Option<LedgerBannerInfo> {
         let ledgers = self.ledgers.read().ok()?;

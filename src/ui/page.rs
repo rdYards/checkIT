@@ -668,7 +668,7 @@ impl PageManager {
         key: &str,
         manager: &PageManager,
     ) -> Result<GTKBox, glib::Error> {
-        let container = GTKBox::new(Orientation::Horizontal, 12);
+        let container = GTKBox::new(Orientation::Horizontal, 10);
         container.set_property("name", "ledger_banner");
         container.set_hexpand(true);
         container.add_css_class("navigation-button");
@@ -710,14 +710,15 @@ impl PageManager {
         // Popover Logic
         let popover = Popover::new();
         let popover_content = GTKBox::new(Orientation::Vertical, 0);
-        popover_content.set_margin_start(6);
-        popover_content.set_margin_end(6);
-        popover_content.set_margin_top(6);
-        popover_content.set_margin_bottom(6);
+        popover_content.set_margin_start(5);
+        popover_content.set_margin_end(5);
+        popover_content.set_margin_top(5);
+        popover_content.set_margin_bottom(5);
 
         let actions = vec![
             ("Save", "document-save-symbolic", "win.save-ledger"),
             ("Save As", "document-save-as-symbolic", "win.save-as-ledger"),
+            ("Clone", "edit-copy-symbolic", "win.clone-ledger"),
             ("Share", "folder-publicshare-symbolic", "win.share-ledger"),
             ("Remove", "edit-delete-symbolic", "win.remove-ledger"),
         ];
@@ -727,7 +728,7 @@ impl PageManager {
             btn.add_css_class("flat");
             btn.set_action_name(Some(action_id));
 
-            let btn_box = GTKBox::new(Orientation::Horizontal, 12);
+            let btn_box = GTKBox::new(Orientation::Horizontal, 10);
             let icon = Image::from_icon_name(icon_name);
             let lbl = Label::new(Some(text));
             btn_box.append(&icon);
