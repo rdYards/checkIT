@@ -74,8 +74,12 @@ impl LedgerDatabase {
 
     /// Imports an existing ledger into the database.
     pub fn import_ledger(&self, path: String, password: String) -> Result<(), String> {
-        let ledger = Ledger::from_file(&password, &path)
+        let mut ledger = Ledger::from_file(&password, &path)
             .ok_or_else(|| "Invalid password or file not found".to_string())?;
+        
+        // Update root path to prevent saving to the wrong location
+        ledger.data.meta.root_path = std::path::PathBuf::from(&path);
+        
         let key = format!("{}_{}", path, self.generate_unique_id());
         self.add_ledger_internal(key, ledger)?;
         Ok(())
