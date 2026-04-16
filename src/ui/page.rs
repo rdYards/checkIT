@@ -25,6 +25,7 @@ pub struct PageManagerState {
     pub pages: HashMap<String, NavigationPage>,
     pub list_containers: HashMap<String, GTKBox>,
     pub button_map: HashMap<String, GTKBox>,
+    pub description_labels: HashMap<String, Label>,
     pub selected_entry: Option<String>,
     pub search_query: String,
     pub current_ledger_key: Option<String>,
@@ -56,6 +57,7 @@ impl PageManager {
                 pages: HashMap::new(),
                 list_containers: HashMap::new(),
                 button_map: HashMap::new(),
+                description_labels: HashMap::new(),
                 selected_entry: None,
                 search_query: String::new(),
                 current_ledger_key: None,
@@ -167,6 +169,21 @@ impl PageManager {
 
                     // Update existing ledgers
                     for ledger in to_update {
+                        let key = ledger.banner.key.clone();
+                        // Update description text
+                        {
+                            let state = manager.state.borrow();
+                            if let Some(label) = state.description_labels.get(&key) {
+                                let new_desc = ledger
+                                    .data
+                                    .as_ref()
+                                    .map(|d| d.data.meta.description.clone())
+                                    .unwrap_or_default();
+                                label.set_text(&new_desc);
+                            }
+                        }
+
+                        // Update LedgerEntry list
                         if let Some(container) = list_containers.get(&ledger.banner.key) {
                             if let Some(ref data) = ledger.data {
                                 let search_query = {
@@ -216,6 +233,27 @@ impl PageManager {
         ));
     }
 
+    // Method to update ledger's description
+    fn on_update_description(&self, key: &str, new_description: &str) {
+        let db = self.db.clone();
+        let key = key.to_string();
+        let new_description = new_description.to_string();
+        let view_stack = self.view_stack.clone();
+
+        glib::MainContext::default().spawn_local(async move {
+            match db.update_ledger_description(&key, new_description) {
+                Ok(_) => {} // DataModel will handle the UI update via subscription
+                Err(e) => {
+                    PageManager::page_popup_alert(
+                        &view_stack,
+                        "Error",
+                        &format!("Failed to update description: {}", e),
+                    );
+                }
+            }
+        });
+    }
+
     // Add a method to handle entry creation
     fn on_add_entry(&self, key: &str, genre: &str, data: &str) {
         let db = self.db.clone();
@@ -226,9 +264,7 @@ impl PageManager {
 
         glib::MainContext::default().spawn_local(async move {
             match db.add_entry_to_ledger(key, genre, data) {
-                Ok(_) => {
-                    // Pass if works
-                }
+                Ok(_) => {} // DataModel will handle the UI update via subscription
                 Err(e) => {
                     PageManager::page_popup_alert(
                         &view_stack,
@@ -249,9 +285,7 @@ impl PageManager {
 
         glib::MainContext::default().spawn_local(async move {
             match db.remove_entry_from_ledger(key, entry_id) {
-                Ok(_) => {
-                    // Pass if works
-                }
+                Ok(_) => {} // DataModel will handle the UI update via subscription
                 Err(e) => {
                     PageManager::page_popup_alert(
                         &view_stack,
@@ -356,6 +390,70 @@ impl PageManager {
         content_box.set_margin_start(10);
         content_box.set_margin_end(10);
         toolbar_view.set_content(Some(&content_box));
+
+        // Description
+        let description_text = ledger
+            .data
+            .as_ref()
+            .map(|d| d.data.meta.description.clone())
+            .unwrap_or_default();
+
+        let description_label = Label::new(Some(&description_text));
+        description_label.set_wrap(true);
+        description_label.set_margin_start(10);
+        description_label.set_margin_end(10);
+        description_label.set_margin_bottom(10);
+        description_label.add_css_class("dim-label");
+
+        let gesture = GestureClick::new();
+        let manager_clone = manager.clone();
+        let key_clone = ledger.banner.key.clone();
+        gesture.connect_pressed(glib::clone!(
+            #[strong]
+            manager_clone,
+            #[strong]
+            key_clone,
+            move |_, _, _, _| {
+                let dialog = AlertDialog::new(
+                    Some("Edit Description"),
+                    Some("Enter a new description for this ledger"),
+                );
+                let entry_row = EntryRow::new();
+                entry_row.set_title("Description");
+                entry_row.set_text(&description_text);
+
+                let content = PreferencesGroup::new();
+                content.add(&entry_row);
+                dialog.set_extra_child(Some(&content));
+
+                dialog.add_response("cancel", "Cancel");
+                dialog.add_response("save", "Save");
+                dialog.set_response_appearance("save", ResponseAppearance::Suggested);
+                dialog.set_response_appearance("cancel", ResponseAppearance::Destructive);
+
+                let manager_inner = manager_clone.clone();
+                let key_inner = key_clone.clone();
+                dialog.choose(
+                    Some(&manager_clone.view_stack),
+                    None::<&gio::Cancellable>,
+                    move |response| {
+                        if response == "save" {
+                            manager_inner.on_update_description(&key_inner, &entry_row.text());
+                        }
+                    },
+                );
+            }
+        ));
+        description_label.add_controller(gesture);
+        content_box.append(&description_label);
+
+        // Register the widget
+        let key = ledger.banner.key.clone();
+        manager
+            .state
+            .borrow_mut()
+            .description_labels
+            .insert(key, description_label.clone());
 
         // Action toolbar
         let action_toolbar = GTKBox::new(Orientation::Horizontal, 10);

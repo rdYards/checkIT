@@ -76,10 +76,10 @@ impl LedgerDatabase {
     pub fn import_ledger(&self, path: String, password: String) -> Result<(), String> {
         let mut ledger = Ledger::from_file(&password, &path)
             .ok_or_else(|| "Invalid password or file not found".to_string())?;
-        
+
         // Update root path to prevent saving to the wrong location
         ledger.data.meta.root_path = std::path::PathBuf::from(&path);
-        
+
         let key = format!("{}_{}", path, self.generate_unique_id());
         self.add_ledger_internal(key, ledger)?;
         Ok(())
@@ -204,7 +204,6 @@ impl LedgerDatabase {
         }
     }
 
-    /// Gets all ledger keys.
     /// Gets ledger information for display in the UI.
     pub fn get_ledger_info(&self, key: &str) -> Option<LedgerBannerInfo> {
         let ledgers = self.ledgers.read().ok()?;
@@ -213,6 +212,22 @@ impl LedgerDatabase {
             title: ledger.data.meta.title.clone(),
             state: ledger.state.clone(),
         })
+    }
+
+    /// Updates the ledger description
+    pub fn update_ledger_description(
+        &self,
+        key: &str,
+        new_description: String,
+    ) -> Result<(), String> {
+        let mut ledgers = self.ledgers.write().map_err(|e| e.to_string())?;
+        if let Some(ledger) = ledgers.get_mut(key) {
+            ledger.data.meta.description = new_description;
+            self.emit(LockEvent::LedgerUpdated(key.to_string()));
+            Ok(())
+        } else {
+            Err("Ledger not found".to_string())
+        }
     }
 
     /// Gets the full ledger data.
