@@ -244,7 +244,7 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: R
                 move |_, _, _| {
                     let key = manager.state.borrow().current_ledger_key.clone();
                     if let Some(k) = key {
-                        on_save_ledger(&window, db.clone(), &k);
+                        on_save_ledger(window, db.clone(), &k);
                     }
                 }
             ))
@@ -316,7 +316,7 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: R
                                 move |response| {
                                     if response == "yes" {
                                         if is_imported {
-                                            on_save_ledger(&window, db_clone.clone(), &k);
+                                            on_save_ledger(window, db_clone.clone(), &k);
                                         } else {
                                             on_save_as_ledger(&window, db_clone.clone(), &k);
                                         }
@@ -334,7 +334,7 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: R
     ]);
 }
 
-fn on_save_ledger(window: &ApplicationWindow, db: Arc<LedgerDatabase>, key: &str) {
+fn on_save_ledger(window: ApplicationWindow, db: Arc<LedgerDatabase>, key: &str) {
     let key = key.to_string();
     let window_clone = window.clone();
     glib::MainContext::default().spawn_local(async move {
@@ -352,12 +352,9 @@ fn on_save_ledger(window: &ApplicationWindow, db: Arc<LedgerDatabase>, key: &str
             }
         };
 
+        // Is file has yet to be saved to file then run "Save As"
         if !is_imported {
-            popup_alert(
-                &window_clone,
-                "Save Error",
-                "This ledger was created in-app. Please use 'Save As' to export it to a file.",
-            );
+            on_save_as_ledger(&window_clone, db, &key);
             return;
         }
 
