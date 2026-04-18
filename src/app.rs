@@ -1,6 +1,6 @@
 use adw::{
-    AboutDialog, AlertDialog, Application, ApplicationWindow, EntryRow, PasswordEntryRow,
-    PreferencesGroup, ResponseAppearance, ViewStack,
+    AboutDialog, ActionRow, AlertDialog, Application, ApplicationWindow, Dialog, EntryRow,
+    HeaderBar, PasswordEntryRow, PreferencesGroup, ResponseAppearance, ViewStack,
     gdk::Display,
     gio,
     gio::{ActionEntry, Settings},
@@ -9,7 +9,7 @@ use adw::{
 };
 use gtk::{
     Box as GTKBox, Builder, Button, CssProvider, FileDialog, IconTheme, Image, Label, License,
-    ListBox, MenuButton, Orientation, Popover, Widget,
+    ListBox, MenuButton, Orientation, Popover, SearchEntry, Widget,
 };
 use std::{rc::Rc, sync::Arc};
 
@@ -97,51 +97,18 @@ pub fn build_app(app: &Application) {
     window.present();
 }
 
-fn setup_global_menu(menu_button: &gtk::MenuButton) {
-    let popover = Popover::new();
-    let popover_content = GTKBox::new(Orientation::Vertical, 0);
-    popover_content.set_margin_start(5);
-    popover_content.set_margin_end(5);
-    popover_content.set_margin_bottom(5);
-    popover_content.set_margin_top(5);
-
-    let actions = vec![
-        ("About", "preferences-system-symbolic", "win.show-about"),
-        (
-            "Keybindings",
-            "input-keyboard-symbolic",
-            "win.show-keybinds",
-        ),
-    ];
-
-    for (text, icon_name, action_id) in actions {
-        let btn = Button::new();
-        btn.add_css_class("flat");
-        btn.set_action_name(Some(action_id));
-
-        let btn_box = GTKBox::new(Orientation::Horizontal, 10);
-        btn_box.append(&Image::from_icon_name(icon_name));
-        btn_box.append(&Label::new(Some(text)));
-        btn.set_child(Some(&btn_box));
-
-        popover_content.append(&btn);
-    }
-
-    popover.set_child(Some(&popover_content));
-    menu_button.set_popover(Some(&popover));
-}
-
 /// Sets up global application shortcuts.
 fn setup_shortcuts(app: &Application) {
     app.set_accels_for_action("win.close", &["<Ctrl>w"]);
     app.set_accels_for_action("win.show-about", &["<Ctrl>a"]);
+    app.set_accels_for_action("win.show-keybinds", &["<Ctrl>k"]);
 
     // Ledger Shortcuts
     app.set_accels_for_action("win.new-ledger", &["<Ctrl>n"]);
-    app.set_accels_for_action("win.load-ledger", &["<Ctrl>o"]);
+    app.set_accels_for_action("win.load-ledger", &["<Ctrl>i"]);
     app.set_accels_for_action("win.save-ledger", &["<Ctrl>s"]);
     app.set_accels_for_action("win.save-as-ledger", &["<Ctrl><Shift>s"]);
-    app.set_accels_for_action("win.share-ledger", &["<Ctrl>n"]);
+    app.set_accels_for_action("win.share-ledger", &["<Ctrl>e"]);
     app.set_accels_for_action("win.remove-ledger", &["<Ctrl>Delete"]);
     app.set_accels_for_action("win.clone-ledger", &["<Ctrl><Shift>c"]);
 
@@ -474,26 +441,102 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: R
                 }
             ))
             .build(),
+        // Action to show KeyBinds dialog
         ActionEntry::builder("show-keybinds")
             .activate(clone!(
                 #[weak]
                 window,
                 move |_, _, _| {
-                    let keybinds_text = "\
-                            <Ctrl>w : Close Window\n\
-                            <Ctrl>a : About\n\
-                            <Ctrl>n : New Ledger\n\
-                            <Ctrl>o : Load Ledger\n\
-                            <Ctrl>s : Save Ledger\n\
-                            <Ctrl><Shift>s : Save As...\n\
-                            <Ctrl><Shift>c : Clone Ledger\n\
-                            <Ctrl>Delete : Remove Ledger\n\
-                            <Ctrl>Tab : Next Ledger\n\
-                            <Ctrl><Shift>Tab : Previous Ledger";
+                    let dialog = Dialog::builder().title("Keybindings").build();
+                    dialog.set_width_request(600);
 
-                    let dialog = AlertDialog::new(Some("Keybindings"), Some(keybinds_text));
-                    dialog.add_response("ok", "OK");
-                    dialog.set_default_response(Some("ok"));
+                    let main_box = GTKBox::new(Orientation::Vertical, 5);
+
+                    let search_entry = SearchEntry::builder()
+                        .placeholder_text("Search shortcuts")
+                        .margin_top(10)
+                        .margin_bottom(10)
+                        .margin_start(10)
+                        .margin_end(10)
+                        .vexpand(true)
+                        .build();
+
+                    let header_bar = HeaderBar::new();
+                    header_bar.set_title_widget(Some(&search_entry));
+                    main_box.append(&header_bar);
+
+                    // Data for the rows
+                    let shortcut_categories = vec![
+                        (
+                            "General",
+                            vec![
+                                ("Close Window", vec!["Ctrl", "W"]),
+                                ("About", vec!["Ctrl", "A"]),
+                                ("Keybinds", vec!["Ctrl", "K"]),
+                            ],
+                        ),
+                        (
+                            "Ledger Management",
+                            vec![
+                                ("New Ledger", vec!["Ctrl", "N"]),
+                                ("Load Ledger", vec!["Ctrl", "I"]),
+                                ("Save Ledger", vec!["Ctrl", "S"]),
+                                ("Save As...", vec!["Ctrl", "Shift", "S"]),
+                                ("Share Ledger", vec!["Ctrl", "E"]),
+                                ("Remove Ledger", vec!["Ctrl", "Delete"]),
+                                ("Clone Ledger", vec!["Ctrl", "Shift", "C"]),
+                            ],
+                        ),
+                        (
+                            "Navigation",
+                            vec![
+                                ("Next Ledger", vec!["Ctrl", "Tab"]),
+                                ("Previous Ledger", vec!["Ctrl", "Shift", "Tab"]),
+                            ],
+                        ),
+                    ];
+
+                    let mut all_rows = Vec::new();
+
+                    for (group_title, shortcuts) in shortcut_categories {
+                        let group = PreferencesGroup::builder()
+                            .title(group_title)
+                            .margin_start(20)
+                            .margin_end(20)
+                            .margin_bottom(20)
+                            .build();
+
+                        for (label_text, keys) in shortcuts {
+                            let row = ActionRow::builder().title(label_text).build();
+
+                            let key_box = GTKBox::new(Orientation::Horizontal, 4);
+                            for key in keys {
+                                let key_label = Label::new(Some(key));
+                                key_label.add_css_class("shortcut-badge");
+                                key_box.append(&key_label);
+                            }
+
+                            row.add_suffix(&key_box);
+                            group.add(&row);
+
+                            // Store the row and its label for the search callback
+                            all_rows.push((row, label_text.to_string()));
+                        }
+                        main_box.append(&group);
+                    }
+
+                    // Implement Search Filtering across all groups
+                    search_entry.connect_search_changed(clone!(move |entry| {
+                        let text = entry.text().to_lowercase();
+                        for (row, label) in &all_rows {
+                            if label.to_lowercase().contains(&text) {
+                                row.set_visible(true);
+                            } else {
+                                row.set_visible(false);
+                            }
+                        }
+                    }));
+                    dialog.set_child(Some(&main_box));
                     dialog.present(Some(&window));
                 }
             ))
@@ -619,6 +662,49 @@ fn on_save_as_ledger(window: &ApplicationWindow, db: Arc<LedgerDatabase>, key: &
             }
         },
     );
+}
+
+fn setup_global_menu(menu_button: &MenuButton) {
+    let popover = Popover::new();
+    let popover_content = GTKBox::new(Orientation::Vertical, 0);
+    popover_content.set_margin_start(5);
+    popover_content.set_margin_end(5);
+    popover_content.set_margin_bottom(5);
+    popover_content.set_margin_top(5);
+
+    let actions = vec![
+        ("About", "preferences-system-symbolic", "win.show-about"),
+        (
+            "Keybindings",
+            "input-keyboard-symbolic",
+            "win.show-keybinds",
+        ),
+    ];
+
+    for (text, icon_name, action_id) in actions {
+        let btn = Button::new();
+        btn.add_css_class("flat");
+        btn.set_action_name(Some(action_id));
+
+        // Fix issue where popup does not disappear when clicked
+        btn.connect_clicked(glib::clone!(
+            #[weak]
+            popover,
+            move |_| {
+                popover.popdown();
+            }
+        ));
+
+        let btn_box = GTKBox::new(Orientation::Horizontal, 10);
+        btn_box.append(&Image::from_icon_name(icon_name));
+        btn_box.append(&Label::new(Some(text)));
+        btn.set_child(Some(&btn_box));
+
+        popover_content.append(&btn);
+    }
+
+    popover.set_child(Some(&popover_content));
+    menu_button.set_popover(Some(&popover));
 }
 
 /// Shows a popup alert dialog.
