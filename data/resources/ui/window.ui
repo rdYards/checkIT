@@ -59,8 +59,22 @@
               <object class="AdwNavigationPage">
                 <property name="title" translatable="yes">Ledger Pages</property>
                 <child>
-                    <!-- PageManger.pages located here -->
-                    <object class="AdwViewStack" id="view_stack" />
+                  <!-- Wrap the stack in a ToolbarView -->
+                  <object class="AdwToolbarView">
+                    <child type="top">
+                      <object class="AdwHeaderBar" id="main_header_bar">
+                        <!-- We will add the MenuButton here programmatically or via UI -->
+                        <child type="end">
+                          <object class="GtkMenuButton" id="global_menu_button">
+                            <property name="icon-name">open-menu-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwViewStack" id="view_stack" />
+                    </child>
+                  </object>
                 </child>
               </object>
             </property>

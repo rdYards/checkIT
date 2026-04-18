@@ -514,108 +514,10 @@ impl PageManager {
         manager: &PageManager,
         ledger: &UiLedger,
     ) -> Result<(NavigationPage, GTKBox), glib::Error> {
-        let toolbar_view = ToolbarView::new();
-        let header_bar = HeaderBar::new();
-        header_bar.set_show_title(true);
-        header_bar.set_show_back_button(false);
-        header_bar.set_show_end_title_buttons(true);
-
-        // Menu option for About + Keybinds
-        let menu_button = MenuButton::new();
-        menu_button.set_icon_name("open-menu-symbolic");
-        menu_button.set_tooltip_text(Some("Menu"));
-
-        // Create the Popover
-        let popover = Popover::new();
-        let popover_content = GTKBox::new(Orientation::Vertical, 0);
-        popover_content.set_margin_start(5);
-        popover_content.set_margin_end(5);
-        popover_content.set_margin_top(5);
-        popover_content.set_margin_bottom(5);
-
-        let actions = vec![
-            ("About", "preferences-system-symbolic", "win.show-about"),
-            (
-                "Keybindings",
-                "input-keyboard-symbolic",
-                "win.show-keybinds",
-            ),
-        ];
-
-        for (text, icon_name, action_id) in actions {
-            let btn = Button::new();
-            btn.add_css_class("flat");
-            btn.set_action_name(Some(action_id));
-
-            let btn_box = GTKBox::new(Orientation::Horizontal, 10);
-            let icon = Image::from_icon_name(icon_name);
-            let lbl = Label::new(Some(text));
-            btn_box.append(&icon);
-            btn_box.append(&lbl);
-            btn.set_child(Some(&btn_box));
-
-            popover_content.append(&btn);
-        }
-
-        popover.set_child(Some(&popover_content));
-        menu_button.set_popover(Some(&popover));
-        header_bar.pack_end(&menu_button);
-        toolbar_view.add_top_bar(&header_bar);
-
         let content_box = GTKBox::new(Orientation::Vertical, 0);
         content_box.set_margin_bottom(10);
         content_box.set_margin_start(10);
         content_box.set_margin_end(10);
-        toolbar_view.set_content(Some(&content_box));
-
-        // Add search bar
-        let search_entry = Entry::new();
-        search_entry.set_placeholder_text(Some("Search by genre, id, or data"));
-        search_entry.set_hexpand(true);
-        search_entry.set_margin_start(10);
-
-        // Keyboard Shortcut Controller
-        let key_controller = EventControllerKey::new();
-        key_controller.set_propagation_phase(PropagationPhase::Capture);
-        key_controller.connect_key_pressed(glib::clone!(
-            #[strong]
-            manager,
-            #[strong]
-            search_entry,
-            move |_controller, keyval, _keycode, state| {
-                // If the search entry is already focused, let the key pass through normally
-                if search_entry.has_focus() {
-                    return glib::Propagation::Proceed;
-                }
-
-                // Handle Modifiers (don't intercept Ctrl, Alt, etc.)
-                if state.contains(ModifierType::CONTROL_MASK)
-                    || state.contains(ModifierType::SUPER_MASK)
-                {
-                    return glib::Propagation::Proceed;
-                }
-
-                match keyval {
-                    // Alt + e to Add Entry
-                    Key::e if state.contains(ModifierType::ALT_MASK) => {
-                        manager.trigger_add_entry_dialog();
-                        glib::Propagation::Stop
-                    }
-                    // Alt + Delete to Remove Entry
-                    Key::d if state.contains(ModifierType::ALT_MASK) => {
-                        manager.trigger_remove_entry_dialog();
-                        glib::Propagation::Stop
-                    }
-                    Key::s if state.contains(ModifierType::ALT_MASK) => {
-                        search_entry.grab_focus();
-                        glib::Propagation::Stop
-                    }
-                    // All other chars proceed
-                    _ => glib::Propagation::Proceed,
-                }
-            }
-        ));
-        toolbar_view.add_controller(key_controller);
 
         // Description
         let description_text = ledger
@@ -710,6 +612,56 @@ impl PageManager {
         remove_button.add_css_class("destructive-action");
         action_toolbar.append(&remove_button);
 
+        // Add search bar
+        let search_entry = Entry::new();
+        search_entry.set_placeholder_text(Some("Search by genre, id, or data"));
+        search_entry.set_hexpand(true);
+        search_entry.set_margin_start(10);
+
+        // Keyboard Shortcut Controller
+        let key_controller = EventControllerKey::new();
+        key_controller.set_propagation_phase(PropagationPhase::Capture);
+        key_controller.connect_key_pressed(glib::clone!(
+            #[strong]
+            manager,
+            #[strong]
+            search_entry,
+            move |_controller, keyval, _keycode, state| {
+                // If the search entry is already focused, let the key pass through normally
+                if search_entry.has_focus() {
+                    return glib::Propagation::Proceed;
+                }
+
+                // Handle Modifiers (don't intercept Ctrl, Alt, etc.)
+                if state.contains(ModifierType::CONTROL_MASK)
+                    || state.contains(ModifierType::SUPER_MASK)
+                {
+                    return glib::Propagation::Proceed;
+                }
+
+                match keyval {
+                    // Alt + e to Add Entry
+                    Key::e if state.contains(ModifierType::ALT_MASK) => {
+                        manager.trigger_add_entry_dialog();
+                        glib::Propagation::Stop
+                    }
+                    // Alt + d to Remove Entry
+                    Key::d if state.contains(ModifierType::ALT_MASK) => {
+                        manager.trigger_remove_entry_dialog();
+                        glib::Propagation::Stop
+                    }
+                    // Alt + f to seach Entries
+                    Key::f if state.contains(ModifierType::ALT_MASK) => {
+                        search_entry.grab_focus();
+                        glib::Propagation::Stop
+                    }
+                    // All other chars proceed
+                    _ => glib::Propagation::Proceed,
+                }
+            }
+        ));
+        content_box.add_controller(key_controller);
+
         remove_button.connect_clicked(glib::clone!(
             #[strong]
             manager,
@@ -794,7 +746,7 @@ impl PageManager {
         content_box.append(&ledger_content);
 
         let page = NavigationPage::new(
-            &toolbar_view,
+            &content_box,
             &ledger
                 .data
                 .as_ref()

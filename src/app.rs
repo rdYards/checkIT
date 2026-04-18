@@ -7,7 +7,10 @@ use adw::{
     glib::clone,
     prelude::*,
 };
-use gtk::{Builder, CssProvider, FileDialog, IconTheme, License, ListBox, Widget};
+use gtk::{
+    Box as GTKBox, Builder, Button, CssProvider, FileDialog, IconTheme, Image, Label, License,
+    ListBox, MenuButton, Orientation, Popover, Widget,
+};
 use std::{rc::Rc, sync::Arc};
 
 use crate::{
@@ -61,6 +64,10 @@ pub fn build_app(app: &Application) {
         .expect("Failed to get ledger_banner_container");
     button_container.set_property("name", "banner_box");
 
+    // Initialize the Global Menu Button
+    let menu_button: MenuButton = builder.object("global_menu_button").expect("...");
+    setup_global_menu(&menu_button);
+
     // Create LedgerDatabase, used for ledger management
     let db = Arc::new(LedgerDatabase::new());
 
@@ -88,6 +95,40 @@ pub fn build_app(app: &Application) {
     setup_actions(&window, db, page_manager);
 
     window.present();
+}
+
+fn setup_global_menu(menu_button: &gtk::MenuButton) {
+    let popover = Popover::new();
+    let popover_content = GTKBox::new(Orientation::Vertical, 0);
+    popover_content.set_margin_start(5);
+    popover_content.set_margin_end(5);
+    popover_content.set_margin_bottom(5);
+    popover_content.set_margin_top(5);
+
+    let actions = vec![
+        ("About", "preferences-system-symbolic", "win.show-about"),
+        (
+            "Keybindings",
+            "input-keyboard-symbolic",
+            "win.show-keybinds",
+        ),
+    ];
+
+    for (text, icon_name, action_id) in actions {
+        let btn = Button::new();
+        btn.add_css_class("flat");
+        btn.set_action_name(Some(action_id));
+
+        let btn_box = GTKBox::new(Orientation::Horizontal, 10);
+        btn_box.append(&Image::from_icon_name(icon_name));
+        btn_box.append(&Label::new(Some(text)));
+        btn.set_child(Some(&btn_box));
+
+        popover_content.append(&btn);
+    }
+
+    popover.set_child(Some(&popover_content));
+    menu_button.set_popover(Some(&popover));
 }
 
 /// Sets up global application shortcuts.
