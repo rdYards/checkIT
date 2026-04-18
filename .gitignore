@@ -4,3 +4,4 @@ build/
 _build/
 Cargo.lock
 *compiled
+/docs/.*
