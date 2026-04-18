@@ -92,7 +92,21 @@ pub fn build_app(app: &Application) {
 
 /// Sets up global application shortcuts.
 fn setup_shortcuts(app: &Application) {
-    app.set_accels_for_action("win.close", &["<Ctrl>W"]);
+    app.set_accels_for_action("win.close", &["<Ctrl>w"]);
+    app.set_accels_for_action("win.show-about", &["<Ctrl>a"]);
+
+    // Ledger Shortcuts
+    app.set_accels_for_action("win.new-ledger", &["<Ctrl>n"]);
+    app.set_accels_for_action("win.load-ledger", &["<Ctrl>o"]);
+    app.set_accels_for_action("win.save-ledger", &["<Ctrl>s"]);
+    app.set_accels_for_action("win.save-as-ledger", &["<Ctrl><Shift>s"]);
+    app.set_accels_for_action("win.share-ledger", &["<Ctrl>n"]);
+    app.set_accels_for_action("win.remove-ledger", &["<Ctrl>Delete"]);
+    app.set_accels_for_action("win.clone-ledger", &["<Ctrl><Shift>c"]);
+
+    // Navigation shortcuts
+    app.set_accels_for_action("win.next-ledger", &["<Ctrl>Tab"]);
+    app.set_accels_for_action("win.prev-ledger", &["<Ctrl><Shift>Tab"]);
 }
 
 /// Sets up application actions (e.g., "new-ledger", "load-ledger").
@@ -303,10 +317,12 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: R
                                 Some("Remove Ledger"),
                                 Some("Do you want to save changes before removing?"),
                             );
+                            dialog.add_response("cancel", "Cancel");
                             dialog.add_response("no", "Remove Without Saving");
                             dialog.add_response("yes", "Save First");
                             dialog.set_response_appearance("no", ResponseAppearance::Destructive);
                             dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+                            dialog.set_response_appearance("cancel", ResponseAppearance::Default);
 
                             let db_clone = db_clone.clone();
                             let window_clone_close = window.clone();
@@ -314,15 +330,17 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: R
                                 Some(&window_clone_close),
                                 None::<&gio::Cancellable>,
                                 move |response| {
-                                    if response == "yes" {
-                                        if is_imported {
-                                            on_save_ledger(window, db_clone.clone(), &k);
-                                        } else {
-                                            on_save_as_ledger(&window, db_clone.clone(), &k);
+                                    if response != "cancel" {
+                                        if response == "yes" {
+                                            if is_imported {
+                                                on_save_ledger(window, db_clone.clone(), &k);
+                                            } else {
+                                                on_save_as_ledger(&window, db_clone.clone(), &k);
+                                            }
+                                            let _ = db_clone.remove_ledger(&k);
+                                        } else if response == "no" {
+                                            let _ = db_clone.remove_ledger(&k);
                                         }
-                                        let _ = db_clone.remove_ledger(&k);
-                                    } else {
-                                        let _ = db_clone.remove_ledger(&k);
                                     }
                                 },
                             );
@@ -392,6 +410,50 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: R
                             },
                         );
                     }
+                }
+            ))
+            .build(),
+        // Action to cycle to the next ledger
+        ActionEntry::builder("next-ledger")
+            .activate(clone!(
+                #[strong]
+                manager,
+                move |_, _, _| {
+                    manager.cycle_ledger(true);
+                }
+            ))
+            .build(),
+        // Action to cycle to the previous ledger
+        ActionEntry::builder("prev-ledger")
+            .activate(clone!(
+                #[strong]
+                manager,
+                move |_, _, _| {
+                    manager.cycle_ledger(false);
+                }
+            ))
+            .build(),
+        ActionEntry::builder("show-keybinds")
+            .activate(clone!(
+                #[weak]
+                window,
+                move |_, _, _| {
+                    let keybinds_text = "\
+                            <Ctrl>w : Close Window\n\
+                            <Ctrl>a : About\n\
+                            <Ctrl>n : New Ledger\n\
+                            <Ctrl>o : Load Ledger\n\
+                            <Ctrl>s : Save Ledger\n\
+                            <Ctrl><Shift>s : Save As...\n\
+                            <Ctrl><Shift>c : Clone Ledger\n\
+                            <Ctrl>Delete : Remove Ledger\n\
+                            <Ctrl>Tab : Next Ledger\n\
+                            <Ctrl><Shift>Tab : Previous Ledger";
+
+                    let dialog = AlertDialog::new(Some("Keybindings"), Some(keybinds_text));
+                    dialog.add_response("ok", "OK");
+                    dialog.set_default_response(Some("ok"));
+                    dialog.present(Some(&window));
                 }
             ))
             .build(),

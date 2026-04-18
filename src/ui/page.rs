@@ -1,6 +1,8 @@
 use adw::{
     ActionRow, AlertDialog, ComboRow, EntryRow, HeaderBar, NavigationPage, PreferencesGroup,
-    ResponseAppearance, ToolbarView, ViewStack, gio,
+    ResponseAppearance, ToolbarView, ViewStack,
+    gdk::{Key, ModifierType},
+    gio,
     gio::Cancellable,
     glib,
     prelude::{
@@ -9,8 +11,9 @@ use adw::{
     },
 };
 use gtk::{
-    Align, Box as GTKBox, Button, Entry, GestureClick, Image, Label, ListBox, MenuButton,
-    Orientation, Popover, SelectionMode, StringList, Widget, prelude::*,
+    Align, Box as GTKBox, Button, Entry, EventControllerKey, GestureClick, Image, Label, ListBox,
+    MenuButton, Orientation, Popover, PropagationPhase, SelectionMode, StringList, Widget,
+    prelude::*,
 };
 use sl::types::LedgerEntry;
 use std::{cell::RefCell, collections, collections::HashMap, rc::Rc, sync::Arc};
@@ -233,6 +236,40 @@ impl PageManager {
         ));
     }
 
+    /// Cycles to the next or previous ledger.
+    /// forward = true for Next, forward = false for Previous.
+    pub fn cycle_ledger(&self, forward: bool) {
+        let next_key = {
+            let state = self.state.borrow();
+            let mut keys: Vec<String> = state.pages.keys().cloned().collect();
+
+            // Sort keys so the cycling order is predictable
+            keys.sort();
+
+            if keys.is_empty() {
+                return;
+            }
+
+            let current_idx = state
+                .current_ledger_key
+                .as_ref()
+                .and_then(|k| keys.iter().position(|x| x == k))
+                .unwrap_or(0);
+
+            let next_idx = if forward {
+                (current_idx + 1) % keys.len()
+            } else {
+                (current_idx + keys.len() - 1) % keys.len()
+            };
+
+            Some(keys[next_idx].clone())
+        };
+
+        if let Some(key) = next_key {
+            self.show_page(&key);
+        }
+    }
+
     // Method to update ledger's description
     fn on_update_description(&self, key: &str, new_description: &str) {
         let db = self.db.clone();
@@ -365,6 +402,112 @@ impl PageManager {
         }
     }
 
+    /// Helper to trigger the "Add Entry" dialog
+    fn trigger_add_entry_dialog(&self) {
+        // Define genre tags
+        let git_tags = vec![
+            "add", "remove", "modify", "commit", "push", "pull", "init", "merge", "branch",
+            "stash", "reset", "tag", "fetch", "clone", "status", "log", "diff",
+        ];
+
+        let dialog = AlertDialog::new(Some("Add Entry"), Some("Enter entry details"));
+        let genre_combo = ComboRow::new();
+        genre_combo.set_title("Genre");
+        let list = StringList::new(&git_tags);
+        genre_combo.set_model(Some(&list));
+
+        let content = PreferencesGroup::new();
+        content.add(&genre_combo);
+        let data_entry = EntryRow::new();
+        data_entry.set_title("Data");
+        content.add(&data_entry);
+        dialog.set_extra_child(Some(&content));
+
+        dialog.add_response("cancel", "Cancel");
+        dialog.add_response("add", "Add");
+        dialog.set_response_appearance("add", ResponseAppearance::Suggested);
+        dialog.set_response_appearance("cancel", ResponseAppearance::Destructive);
+
+        let manager_clone = self.clone();
+        dialog.choose(
+            Some(&self.view_stack),
+            None::<&gio::Cancellable>,
+            move |response| {
+                if response == "add" {
+                    let genre = genre_combo
+                        .selected_item()
+                        .and_then(|item| {
+                            item.downcast_ref::<gtk::StringObject>()
+                                .map(|obj| obj.string().to_string())
+                        })
+                        .unwrap_or_default();
+                    let data = data_entry.text().to_string();
+
+                    if genre.is_empty() || data.is_empty() {
+                        PageManager::page_popup_alert(
+                            &manager_clone.view_stack,
+                            "Error",
+                            "All fields must be filled",
+                        );
+                        return;
+                    }
+
+                    let key = manager_clone.state.borrow().current_ledger_key.clone();
+                    if let Some(key) = key {
+                        manager_clone.on_add_entry(&key, &genre, &data);
+                    }
+                }
+            },
+        );
+    }
+
+    /// Helper to trigger the "Remove Entry" confirmation dialog
+    fn trigger_remove_entry_dialog(&self) {
+        let (ledger_key, selected_entry) = {
+            let state = self.state.borrow();
+            (
+                state.current_ledger_key.clone(),
+                state.selected_entry.clone(),
+            )
+        };
+
+        if let (Some(_key), Some(entry_id)) = (ledger_key, selected_entry) {
+            let dialog = AlertDialog::new(
+                Some("Remove Entry"),
+                Some(&format!(
+                    "Are you sure you want to remove entry {}?",
+                    entry_id
+                )),
+            );
+            let content = PreferencesGroup::new();
+            content.add(&Label::new(Some("This action cannot be undone.")));
+            dialog.set_extra_child(Some(&content));
+            dialog.add_response("cancel", "Cancel");
+            dialog.add_response("remove", "Remove");
+            dialog.set_response_appearance("remove", ResponseAppearance::Destructive);
+            dialog.set_response_appearance("cancel", ResponseAppearance::Suggested);
+
+            let manager_clone = self.clone();
+            let entry_id_clone = entry_id.clone();
+            dialog.choose(
+                Some(&self.view_stack),
+                None::<&gio::Cancellable>,
+                move |response| {
+                    if response == "remove" {
+                        let key = manager_clone
+                            .state
+                            .borrow()
+                            .current_ledger_key
+                            .clone()
+                            .unwrap();
+                        manager_clone.on_remove_entry(&key, &entry_id_clone);
+                        manager_clone.state.borrow_mut().selected_entry = None;
+                    }
+                },
+            );
+        }
+    }
+
     // Create Components
     /// Creates the page components for a ledger
     fn create_page_components(
@@ -377,12 +520,46 @@ impl PageManager {
         header_bar.set_show_back_button(false);
         header_bar.set_show_end_title_buttons(true);
 
-        let about_button = Button::new();
-        about_button.set_icon_name("help-about-symbolic");
-        about_button.set_tooltip_text(Some("About"));
-        about_button.set_action_name(Some("win.show-about"));
+        // Menu option for About + Keybinds
+        let menu_button = MenuButton::new();
+        menu_button.set_icon_name("open-menu-symbolic");
+        menu_button.set_tooltip_text(Some("Menu"));
 
-        header_bar.pack_end(&about_button);
+        // Create the Popover
+        let popover = Popover::new();
+        let popover_content = GTKBox::new(Orientation::Vertical, 0);
+        popover_content.set_margin_start(5);
+        popover_content.set_margin_end(5);
+        popover_content.set_margin_top(5);
+        popover_content.set_margin_bottom(5);
+
+        let actions = vec![
+            ("About", "preferences-system-symbolic", "win.show-about"),
+            (
+                "Keybindings",
+                "input-keyboard-symbolic",
+                "win.show-keybinds",
+            ),
+        ];
+
+        for (text, icon_name, action_id) in actions {
+            let btn = Button::new();
+            btn.add_css_class("flat");
+            btn.set_action_name(Some(action_id));
+
+            let btn_box = GTKBox::new(Orientation::Horizontal, 10);
+            let icon = Image::from_icon_name(icon_name);
+            let lbl = Label::new(Some(text));
+            btn_box.append(&icon);
+            btn_box.append(&lbl);
+            btn.set_child(Some(&btn_box));
+
+            popover_content.append(&btn);
+        }
+
+        popover.set_child(Some(&popover_content));
+        menu_button.set_popover(Some(&popover));
+        header_bar.pack_end(&menu_button);
         toolbar_view.add_top_bar(&header_bar);
 
         let content_box = GTKBox::new(Orientation::Vertical, 0);
@@ -390,6 +567,55 @@ impl PageManager {
         content_box.set_margin_start(10);
         content_box.set_margin_end(10);
         toolbar_view.set_content(Some(&content_box));
+
+        // Add search bar
+        let search_entry = Entry::new();
+        search_entry.set_placeholder_text(Some("Search by genre, id, or data"));
+        search_entry.set_hexpand(true);
+        search_entry.set_margin_start(10);
+
+        // Keyboard Shortcut Controller
+        let key_controller = EventControllerKey::new();
+        key_controller.set_propagation_phase(PropagationPhase::Capture);
+        key_controller.connect_key_pressed(glib::clone!(
+            #[strong]
+            manager,
+            #[strong]
+            search_entry,
+            move |_controller, keyval, _keycode, state| {
+                // If the search entry is already focused, let the key pass through normally
+                if search_entry.has_focus() {
+                    return glib::Propagation::Proceed;
+                }
+
+                // Handle Modifiers (don't intercept Ctrl, Alt, etc.)
+                if state.contains(ModifierType::CONTROL_MASK)
+                    || state.contains(ModifierType::SUPER_MASK)
+                {
+                    return glib::Propagation::Proceed;
+                }
+
+                match keyval {
+                    // Alt + e to Add Entry
+                    Key::e if state.contains(ModifierType::ALT_MASK) => {
+                        manager.trigger_add_entry_dialog();
+                        glib::Propagation::Stop
+                    }
+                    // Alt + Delete to Remove Entry
+                    Key::d if state.contains(ModifierType::ALT_MASK) => {
+                        manager.trigger_remove_entry_dialog();
+                        glib::Propagation::Stop
+                    }
+                    Key::s if state.contains(ModifierType::ALT_MASK) => {
+                        search_entry.grab_focus();
+                        glib::Propagation::Stop
+                    }
+                    // All other chars proceed
+                    _ => glib::Propagation::Proceed,
+                }
+            }
+        ));
+        toolbar_view.add_controller(key_controller);
 
         // Description
         let description_text = ledger
@@ -473,67 +699,7 @@ impl PageManager {
             #[strong]
             manager,
             move |_| {
-                // Define genre tags (related to Gitops)
-                let git_tags = vec![
-                    "add", "remove", "modify", "commit", "push", "pull", "init", "merge", "branch",
-                    "stash", "reset", "tag", "fetch", "clone", "status", "log", "diff",
-                ];
-
-                // Show a dialog to enter entry details
-                let dialog = AlertDialog::new(Some("Add Entry"), Some("Enter entry details"));
-
-                // Create a dropdown for Git tags
-                let genre_combo = ComboRow::new();
-                genre_combo.set_title("Genre");
-
-                // Create a string list for the dropdown
-                let list = StringList::new(&git_tags);
-                genre_combo.set_model(Some(&list));
-
-                let content = PreferencesGroup::new();
-                content.add(&genre_combo);
-                let data_entry = EntryRow::new();
-                data_entry.set_title("Data");
-                content.add(&data_entry);
-                dialog.set_extra_child(Some(&content));
-
-                dialog.add_response("cancel", "Cancel");
-                dialog.add_response("add", "Add");
-                dialog.set_response_appearance("add", ResponseAppearance::Suggested);
-                dialog.set_response_appearance("cancel", ResponseAppearance::Destructive);
-
-                let manager_clone = manager.clone();
-                dialog.choose(
-                    Some(&manager.view_stack),
-                    None::<&gio::Cancellable>,
-                    move |response| {
-                        if response == "add" {
-                            let genre = genre_combo
-                                .selected_item()
-                                .and_then(|item| {
-                                    item.downcast_ref::<gtk::StringObject>()
-                                        .map(|obj| obj.string().to_string())
-                                })
-                                .unwrap_or_default();
-                            let data = data_entry.text().to_string();
-
-                            // Validate all fields
-                            if genre.is_empty() || data.is_empty() {
-                                PageManager::page_popup_alert(
-                                    &manager_clone.view_stack,
-                                    "Error",
-                                    "All fields must be filled",
-                                );
-                                return;
-                            }
-
-                            let key = manager_clone.state.borrow().current_ledger_key.clone();
-                            if let Some(key) = key {
-                                manager_clone.on_add_entry(&key, &genre, &data);
-                            }
-                        }
-                    },
-                );
+                manager.trigger_add_entry_dialog();
             }
         ));
 
@@ -548,51 +714,7 @@ impl PageManager {
             #[strong]
             manager,
             move |_| {
-                let (ledger_key, selected_entry) = {
-                    let state = manager.state.borrow();
-                    (
-                        state.current_ledger_key.clone(),
-                        state.selected_entry.clone(),
-                    )
-                };
-
-                if let Some(ledger_key) = ledger_key {
-                    if let Some(entry_id) = selected_entry {
-                        let dialog = AlertDialog::new(
-                            Some("Remove Entry"),
-                            Some(&format!(
-                                "Are you sure you want to remove entry {}?",
-                                entry_id
-                            )),
-                        );
-                        let content = PreferencesGroup::new();
-                        let label = Label::new(Some("This action cannot be undone."));
-                        content.add(&label);
-                        dialog.set_extra_child(Some(&content));
-
-                        dialog.add_response("cancel", "Cancel");
-                        dialog.add_response("remove", "Remove");
-                        dialog.set_response_appearance("remove", ResponseAppearance::Destructive);
-                        dialog.set_response_appearance("cancel", ResponseAppearance::Suggested);
-
-                        let manager_clone = manager.clone();
-                        let ledger_key_clone = ledger_key.clone();
-                        let entry_id_clone = entry_id.clone();
-
-                        dialog.choose(
-                            Some(&manager.view_stack),
-                            None::<&gio::Cancellable>,
-                            move |response| {
-                                if response == "remove" {
-                                    manager_clone
-                                        .on_remove_entry(&ledger_key_clone, &entry_id_clone);
-
-                                    manager_clone.state.borrow_mut().selected_entry = None;
-                                }
-                            },
-                        );
-                    }
-                }
+                manager.trigger_remove_entry_dialog();
             }
         ));
 
@@ -605,13 +727,8 @@ impl PageManager {
         ledger_content_container.set_hexpand(true);
         ledger_content_container.set_vexpand(true);
 
-        // Add search bar
-        let search_entry = Entry::new();
-        search_entry.set_placeholder_text(Some("Search by genre, id, or data"));
-        search_entry.set_hexpand(true);
-        search_entry.set_margin_start(10);
+        // Connect Search Bar
         action_toolbar.append(&search_entry);
-
         search_entry.connect_changed(glib::clone!(
             #[strong]
             manager,
