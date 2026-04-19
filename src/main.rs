@@ -1,6 +1,7 @@
 mod app;
 mod data;
 mod ui;
+mod p2p;
 
 use adw::{Application, gio, gio::Resource, gio::prelude::*, glib};
 use std::path::Path;
@@ -8,7 +9,8 @@ use std::path::Path;
 const APP_ID: &str = "org.gtk_rs.CheckIT";
 const DEFAULT_FILE_PATH: &str = "~/";
 
-fn main() -> glib::ExitCode {
+#[tokio::main]
+async fn main() -> glib::ExitCode {
     // Load resources from the output directory
     let resource_path = Path::new(env!("OUT_DIR")).join("data/checkit.gresource");
     let res = Resource::load(resource_path).expect("Failed to load resources");

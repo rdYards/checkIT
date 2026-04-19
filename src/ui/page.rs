@@ -1,6 +1,6 @@
 use adw::{
-    ActionRow, AlertDialog, ComboRow, EntryRow, HeaderBar, NavigationPage, PreferencesGroup,
-    ResponseAppearance, ToolbarView, ViewStack,
+    ActionRow, AlertDialog, ComboRow, EntryRow, NavigationPage,
+    PreferencesGroup, ResponseAppearance, ViewStack,
     gdk::{Key, ModifierType},
     gio,
     gio::Cancellable,
@@ -19,9 +19,10 @@ use sl::types::LedgerEntry;
 use std::{cell::RefCell, collections, collections::HashMap, rc::Rc, sync::Arc};
 
 use crate::{
-    data::data_model::{DataModel, UiLedger},
-    data::ledger_db::LedgerBannerInfo,
-    data::ledger_db::LedgerDatabase,
+    data::{
+        data_model::{DataModel, UiLedger},
+        ledger_db::{LedgerBannerInfo, LedgerDatabase},
+    },
 };
 
 pub struct PageManagerState {
@@ -348,6 +349,8 @@ impl PageManager {
 
             // Then update the current ledger key
             self.state.borrow_mut().current_ledger_key = Some(key.to_string());
+            // Update current_ledger_key in db used for P2P
+            self.db.update_current_ledger_key(Some(key.to_string()))
         }
     }
 
@@ -611,6 +614,13 @@ impl PageManager {
         remove_button.set_tooltip_text(Some("Remove selected entry"));
         remove_button.add_css_class("destructive-action");
         action_toolbar.append(&remove_button);
+
+        // Create "Share Entry" button
+        let share_entry_button = Button::new();
+        share_entry_button.set_icon_name("folder-publicshare-symbolic");
+        share_entry_button.set_tooltip_text(Some("Share selected entry"));
+        share_entry_button.set_action_name(Some("win.share-entry"));
+        action_toolbar.append(&share_entry_button);
 
         // Add search bar
         let search_entry = Entry::new();

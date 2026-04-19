@@ -12,10 +12,16 @@ use gtk::{
     ListBox, MenuButton, Orientation, Popover, SearchEntry, Widget,
 };
 use std::{rc::Rc, sync::Arc};
+use tokio::sync::mpsc;
 
 use crate::{
     APP_ID,
     data::{data_model::DataModel, ledger_db::LedgerDatabase},
+    p2p::{
+        messenger::{IncomingTransfer, P2PManager},
+        share_dialog,
+        share_dialog::ShareTarget,
+    },
     ui::page::PageManager,
 };
 
@@ -92,12 +98,72 @@ pub fn build_app(app: &Application) {
     let settings = Settings::new(APP_ID);
     load_window_size(&window, &settings);
 
-    setup_actions(&window, db, page_manager);
+    // Setup P2P Channel
+    let (p2p_tx, mut p2p_rx) = mpsc::unbounded_channel::<IncomingTransfer>();
+    let p2p_manager = Arc::new(P2PManager::new(db.clone(), p2p_tx));
+
+    // Start P2P Agent
+    let p2p_clone = p2p_manager.clone();
+    tokio::spawn(async move {
+        p2p_clone.start().await;
+    });
+
+    let p2p_manager_for_ui = p2p_manager.clone();
+
+    // Handles incoming requests from other clients
+    // When a request is recieved will create a popup having the 
+    // user respond
+    let window_clone = window.clone();
+    glib::MainContext::default().spawn_local(async move {
+        while let Some(transfer) = p2p_rx.recv().await {
+            let p2p_manager_inner = p2p_manager_for_ui.clone();
+            let win = window_clone.clone();
+
+            let dialog = AlertDialog::new(
+                Some("Incoming Transfer"),
+                Some(&format!(
+                    "{} wants to send you a ledger. Accept?",
+                    transfer.sender_name
+                )),
+            );
+            dialog.add_response("deny", "Deny");
+            dialog.add_response("accept", "Accept");
+            dialog.set_response_appearance("accept", ResponseAppearance::Suggested);
+
+            dialog.choose(Some(&win), None::<&gio::Cancellable>, move |response| {
+                if response == "accept" {
+                    let stream = transfer.stream;
+                    let pubkey = transfer.sender_pubkey;
+                    let data_type = transfer.data_type;
+                    let p2p_final = p2p_manager_inner.clone();
+
+                    tokio::spawn(async move {
+                        match p2p_final
+                            .handle_incoming_stream(stream, pubkey, data_type)
+                            .await
+                        {
+                            Ok(decrypted_bytes) => {
+                                println!(
+                                    "Received decrypted ledger data! Size: {} bytes",
+                                    decrypted_bytes.len()
+                                );
+                            }
+                            Err(e) => eprintln!("Transfer failed: {}", e),
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+    setup_actions(&window, db, page_manager, p2p_manager);
 
     window.present();
 }
 
 /// Sets up global application shortcuts.
+/// Ctrl for main functions (Window, Ledger, Nav)
+/// Alt used for Entries and inner-Ledger
 fn setup_shortcuts(app: &Application) {
     app.set_accels_for_action("win.close", &["<Ctrl>w"]);
     app.set_accels_for_action("win.show-about", &["<Ctrl>a"]);
@@ -108,17 +174,27 @@ fn setup_shortcuts(app: &Application) {
     app.set_accels_for_action("win.load-ledger", &["<Ctrl>i"]);
     app.set_accels_for_action("win.save-ledger", &["<Ctrl>s"]);
     app.set_accels_for_action("win.save-as-ledger", &["<Ctrl><Shift>s"]);
-    app.set_accels_for_action("win.share-ledger", &["<Ctrl>e"]);
     app.set_accels_for_action("win.remove-ledger", &["<Ctrl>Delete"]);
     app.set_accels_for_action("win.clone-ledger", &["<Ctrl><Shift>c"]);
 
+    // Sharing
+    app.set_accels_for_action("win.share-ledger", &["<Ctrl>e"]);
+    // Alt to follow keybinds in page.rs
+    app.set_accels_for_action("win.share-entry", &["<Alt>e"]);
+    
+    
     // Navigation shortcuts
     app.set_accels_for_action("win.next-ledger", &["<Ctrl>Tab"]);
     app.set_accels_for_action("win.prev-ledger", &["<Ctrl><Shift>Tab"]);
 }
 
 /// Sets up application actions (e.g., "new-ledger", "load-ledger").
-fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: Rc<PageManager>) {
+fn setup_actions(
+    window: &ApplicationWindow,
+    db: Arc<LedgerDatabase>,
+    manager: Rc<PageManager>,
+    p2p: Arc<P2PManager>,
+) {
     window.add_action_entries([
         // Action to show About dialog
         ActionEntry::builder("show-about")
@@ -293,8 +369,62 @@ fn setup_actions(window: &ApplicationWindow, db: Arc<LedgerDatabase>, manager: R
             .activate(clone!(
                 #[weak]
                 window,
+                #[strong]
+                p2p,
+                #[strong]
+                manager,
                 move |_, _, _| {
-                    popup_alert(&window, "Share", "Coming soon in a future update!");
+                    let key = manager.state.borrow().current_ledger_key.clone();
+
+                    if let Some(k) = key {
+                        share_dialog::open_share_dialog(
+                            window,
+                            p2p.clone(),
+                            ShareTarget::FullLedger { key: k.clone() },
+                        );
+                    } else {
+                        popup_alert(
+                            &window,
+                            "Error",
+                            "Please open a ledger before trying to share it",
+                        );
+                    }
+                }
+            ))
+            .build(),
+        // Action to share a single entry
+        ActionEntry::builder("share-entry")
+            .activate(clone!(
+                #[weak]
+                window,
+                #[strong]
+                manager,
+                #[strong]
+                p2p,
+                move |_, _, _| {
+                    // Access the PageManager state to see what is currently selected
+                    let state = manager.state.borrow();
+
+                    if let (Some(key), Some(entry_id)) =
+                        (&state.current_ledger_key, &state.selected_entry)
+                    {
+                        // Call the dialog function
+                        share_dialog::open_share_dialog(
+                            window,
+                            p2p.clone(),
+                            ShareTarget::SingleEntry {
+                                ledger_key: key.clone(),
+                                entry_id: entry_id.clone(),
+                            },
+                        );
+                    } else {
+                        // No entry selected, notify the user
+                        popup_alert(
+                            &window,
+                            "Error",
+                            "Please select an entry from the list first",
+                        );
+                    }
                 }
             ))
             .build(),

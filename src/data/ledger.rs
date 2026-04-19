@@ -1,17 +1,18 @@
 use crate::DEFAULT_FILE_PATH;
+use serde::{Deserialize, Serialize};
 use sl::SecureLedger;
 use std::path::Path;
 
 // Database states for ledgers
 // Used to prevent processes from writing to ledgers at the same time
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum LedgerState {
     Unlocked,
     UserLocked(String),   // Username who has it locked
     SystemLocked(String), // System process that has it locked
 }
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Ledger {
     pub data: SecureLedger,
     pub state: LedgerState,

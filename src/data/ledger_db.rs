@@ -1,4 +1,5 @@
 use crate::data::ledger::{Ledger, LedgerState};
+use sl::SecureLedger;
 use std::{
     collections::HashMap,
     sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard},
@@ -28,6 +29,7 @@ pub struct LedgerBannerInfo {
 pub struct LedgerDatabase {
     ledgers: Arc<RwLock<HashMap<String, Ledger>>>,
     pub lock_events: Arc<RwLock<Vec<UnboundedSender<LockEvent>>>>,
+    current_ledger_key: Arc<RwLock<Option<String>>>,
 }
 
 impl LedgerDatabase {
@@ -36,6 +38,7 @@ impl LedgerDatabase {
         Self {
             ledgers: Arc::new(RwLock::new(HashMap::new())),
             lock_events: Arc::new(RwLock::new(Vec::new())),
+            current_ledger_key: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -82,6 +85,26 @@ impl LedgerDatabase {
 
         let key = format!("{}_{}", path, self.generate_unique_id());
         self.add_ledger_internal(key, ledger)?;
+        Ok(())
+    }
+
+    /// Internal method to import a ledger directly (for P2P operations)
+    pub fn import_ledger_internal(&self, mut ledger: SecureLedger) -> Result<(), String> {
+        let key = format!(
+            "Received_{}_{}",
+            ledger.meta.title,
+            self.generate_unique_id()
+        );
+
+        ledger.meta.root_path = std::path::PathBuf::from("~/");
+
+        // Convert SecureLedger to Ledger before adding to the database
+        let ledger_to_add = Ledger {
+            data: ledger,
+            state: LedgerState::Unlocked,
+        };
+
+        self.add_ledger_internal(key, ledger_to_add)?;
         Ok(())
     }
 
@@ -145,7 +168,7 @@ impl LedgerDatabase {
     }
 
     /// Adds a ledger to the database and emits an event.
-    fn add_ledger_internal(&self, key: String, ledger: Ledger) -> Result<(), String> {
+    pub fn add_ledger_internal(&self, key: String, ledger: Ledger) -> Result<(), String> {
         let mut ledgers = self.ledgers.write().map_rel_err()?;
         ledgers.insert(key.clone(), ledger);
         self.emit(LockEvent::LedgerAdded(key));
@@ -241,6 +264,17 @@ impl LedgerDatabase {
         let mut subscribers = self.lock_events.write().map_err(|e| e.to_string())?;
         subscribers.push(tx);
         Ok(rx)
+    }
+
+    /// Updates the current ledger key
+    pub fn update_current_ledger_key(&self, key: Option<String>) {
+        let mut current_key = self.current_ledger_key.write().unwrap();
+        *current_key = key;
+    }
+
+    /// Gets the current ledger key
+    pub fn get_current_ledger_key(&self) -> Option<String> {
+        self.current_ledger_key.read().ok()?.clone()
     }
 }
 
