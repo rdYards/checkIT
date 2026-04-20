@@ -35,9 +35,8 @@ impl Ledger {
                     data: ledger,
                     state: LedgerState::Unlocked,
                 }),
-                Err(e) => {
-                    eprintln!("Error loading ledger: {}", e);
-                    None
+                Err(_e) => {
+                    None // Add logging here
                 }
             }
         } else {

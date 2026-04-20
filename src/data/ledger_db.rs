@@ -197,15 +197,7 @@ impl LedgerDatabase {
                 .data
                 .create_entry(genre, data)
                 .map_err(|e| e.to_string())?;
-
-            println!("[DEBUG] About to emit LedgerUpdated event for key: {}", key);
-
             self.emit(LockEvent::LedgerUpdated(key.clone()));
-
-            println!(
-                "[DEBUG] Emitted LedgerUpdated event for key: {}",
-                key.clone()
-            );
             Ok(())
         } else {
             Err("Ledger not found".to_string())

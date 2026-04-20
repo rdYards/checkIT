@@ -1,6 +1,6 @@
 use adw::{
-    ActionRow, AlertDialog, ComboRow, EntryRow, NavigationPage,
-    PreferencesGroup, ResponseAppearance, ViewStack,
+    ActionRow, AlertDialog, ComboRow, EntryRow, NavigationPage, PreferencesGroup,
+    ResponseAppearance, ViewStack,
     gdk::{Key, ModifierType},
     gio,
     gio::Cancellable,
@@ -18,11 +18,9 @@ use gtk::{
 use sl::types::LedgerEntry;
 use std::{cell::RefCell, collections, collections::HashMap, rc::Rc, sync::Arc};
 
-use crate::{
-    data::{
-        data_model::{DataModel, UiLedger},
-        ledger_db::{LedgerBannerInfo, LedgerDatabase},
-    },
+use crate::data::{
+    data_model::{DataModel, UiLedger},
+    ledger_db::{LedgerBannerInfo, LedgerDatabase},
 };
 
 pub struct PageManagerState {
@@ -84,13 +82,8 @@ impl PageManager {
             #[strong(rename_to = btn_ctn)]
             self.button_container,
             async move {
-                println!("[DEBUG PageManager] Started subscription to DataModel");
-
                 while let Ok(()) = ledgers_rx.changed().await {
-                    println!("[DEBUG PageManager] DataModel changed, getting updated ledgers");
-
                     let ledgers = ledgers_rx.borrow().clone();
-                    println!("[DEBUG PageManager] Received {} ledgers", ledgers.len());
 
                     // Collect current state
                     let current_keys: collections::HashSet<_>;
@@ -220,13 +213,11 @@ impl PageManager {
                                         .collect()
                                 };
 
-                                if let Err(e) = PageManager::build_entry_list(
+                                if let Err(_e) = PageManager::build_entry_list(
                                     &manager,
                                     &filtered_entries,
                                     container,
-                                ) {
-                                    println!("[DEBUG] Error rebuilding entry list: {}", e);
-                                }
+                                ) {} // Add logging here
                             }
                         }
                     }
@@ -735,13 +726,11 @@ impl PageManager {
                         };
 
                         // Rebuild the entry list with filtered data
-                        if let Err(e) = PageManager::build_entry_list(
+                        if let Err(_e) = PageManager::build_entry_list(
                             &manager,
                             &filtered_entries,
                             &ledger_content_container,
-                        ) {
-                            println!("[DEBUG] Error rebuilding entry list: {}", e);
-                        }
+                        ) {} // Add logginger here
                     }
                 }
             }

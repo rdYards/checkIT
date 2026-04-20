@@ -111,7 +111,7 @@ pub fn build_app(app: &Application) {
     let p2p_manager_for_ui = p2p_manager.clone();
 
     // Handles incoming requests from other clients
-    // When a request is recieved will create a popup having the 
+    // When a request is recieved will create a popup having the
     // user respond
     let window_clone = window.clone();
     glib::MainContext::default().spawn_local(async move {
@@ -142,13 +142,8 @@ pub fn build_app(app: &Application) {
                             .handle_incoming_stream(stream, pubkey, data_type)
                             .await
                         {
-                            Ok(decrypted_bytes) => {
-                                println!(
-                                    "Received decrypted ledger data! Size: {} bytes",
-                                    decrypted_bytes.len()
-                                );
-                            }
-                            Err(e) => eprintln!("Transfer failed: {}", e),
+                            Ok(_decrypted_bytes) => {} // Add logging in the future
+                            Err(_e) => {} // Add logging in the future
                         }
                     });
                 }
@@ -181,8 +176,7 @@ fn setup_shortcuts(app: &Application) {
     app.set_accels_for_action("win.share-ledger", &["<Ctrl>e"]);
     // Alt to follow keybinds in page.rs
     app.set_accels_for_action("win.share-entry", &["<Alt>e"]);
-    
-    
+
     // Navigation shortcuts
     app.set_accels_for_action("win.next-ledger", &["<Ctrl>Tab"]);
     app.set_accels_for_action("win.prev-ledger", &["<Ctrl><Shift>Tab"]);

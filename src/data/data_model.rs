@@ -39,16 +39,10 @@ impl DataModel {
         let tx = self.ledgers_tx.clone();
 
         glib::MainContext::default().spawn_local(async move {
-            println!("[DEBUG DataModel] Started subscription to database events");
-
             while let Some(event) = receiver.recv().await {
-                println!("[DEBUG DataModel] Received event: {:?}", event);
-
                 let mut ledgers = tx.borrow().clone();
                 match event {
                     LockEvent::LedgerAdded(key) => {
-                        println!("[DEBUG DataModel] Processing LedgerAdded for key: {}", key);
-
                         if let Some(info) = db.get_ledger_info(&key) {
                             if let Some(ledger) = db.get_ledger_data(&key) {
                                 ledgers.push(UiLedger {
@@ -59,19 +53,9 @@ impl DataModel {
                         }
                     }
                     LockEvent::LedgerRemoved(key) => {
-                        println!(
-                            "[DEBUG DataModel] Processing LedgerRemoved for key: {}",
-                            key
-                        );
-
                         ledgers.retain(|l| l.banner.key != key);
                     }
                     LockEvent::LedgerUpdated(key) => {
-                        println!(
-                            "[DEBUG DataModel] Processing LedgerUpdated for key: {}",
-                            key
-                        );
-
                         if let Some(info) = db.get_ledger_info(&key) {
                             if let Some(ledger) = db.get_ledger_data(&key) {
                                 if let Some(ledger_ui) =
@@ -84,7 +68,6 @@ impl DataModel {
                         }
                     }
                 }
-                println!("[DEBUG DataModel] Sending updated ledgers to UI");
                 // Notify subscribers (UI) of the change
                 let _ = tx.send(ledgers);
             }
