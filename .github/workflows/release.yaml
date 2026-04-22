@@ -100,7 +100,7 @@ jobs:
       - name: Install MSYS2 and Toolchain
         run: |
           choco install msys2 -y
-          # Add MSYS2 bash to PATH for this step
+          echo 'C:\msys64\ucrt64\bin' >> $GITHUB_PATH
           echo 'C:\msys64\usr\bin' >> $GITHUB_PATH
 
       - name: Setup UCRT64 Environment and Install Dependencies
@@ -118,7 +118,6 @@ jobs:
 
       - name: Configure Environment for Rust
         run: |
-          echo 'C:\msys64\ucrt64\bin' >> $GITHUB_PATH
           echo 'PKG_CONFIG_ALLOW_CROSS=1' >> $GITHUB_ENV
           echo 'PKG_CONFIG_PATH=C:\msys64\ucrt64\lib\pkgconfig' >> $GITHUB_ENV
           echo 'CC=C:\msys64\ucrt64\bin\gcc.exe' >> $GITHUB_ENV
@@ -132,12 +131,10 @@ jobs:
       - name: Install Cargo Tools
         run: cargo install cargo-bundle
 
-      - name: Build Release Bundle
+      - name: Build and Bundle
         run: |
-          C:\msys64\usr\bin\bash.exe -c "
-            cargo build --release --target x86_64-pc-windows-gnu
-            cargo bundle --format msi --release
-          "
+          cargo build --release --target x86_patents-pc-windows-gnu
+          cargo bundle --format msi --release
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v7
