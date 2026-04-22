@@ -1,0 +1,132 @@
+name: Release Bundles
+
+on:
+  push:
+    tags:
+      - "v*" # Runs whenever you push a tag like v0.0.6
+
+jobs:
+  # Deb, RPM
+  linux-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-4-dev \
+            libadwaita-1-dev \
+            pkg-config \
+            libglib2.0-dev \
+            build-essential
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Install Cargo Tools
+        run: |
+          cargo install cargo-bundle
+          cargo install cargo-generate-rpm
+
+      - name: Build Debian Package
+        run: cargo bundle --format deb --release
+
+      - name: Build RPM Package
+        run: cargo generate-rpm
+        
+      - name: Consolidate Artifacts
+        run: |
+          mkdir -p target/release/packages
+          cp target/release/bundle/deb/*.deb target/release/packages/ || true
+          cp target/generate-rpm/*.rpm target/release/packages/ || true
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-packages
+          path: target/release/packages/
+
+  macos-release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+
+      - name: Cache Cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build x86_64
+        run: cargo build --release --target x86_64-apple-darwin
+
+      - name: Build aarch64
+        run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Install Cargo Tools
+        run: cargo install cargo-bundle
+
+      - name: Create Universal Bundle
+        run: |
+          # Create the .app bundle for aarch64
+          cargo bundle --format osx --target aarch64-apple-darwin --release
+
+          # Create a universal binary and inject it into the bundle
+          mkdir -p target/universal/release
+          lipo -create \
+            target/x86_64-apple-darwin/release/checkit \
+            target/aarch64-apple-darwin/release/checkit \
+            -output target/universal/release/checkit
+
+          # Replace the binary inside the .app bundle with our universal version
+          cp target/universal/release/checkit target/aarch64-apple-darwin/release/CheckIT.app/Contents/MacOS/CheckIT
+
+      - name: Upload Universal Bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: universal-macos-bundle
+          path: target/aarch64-apple-darwin/release/CheckIT.app
+
+  windows-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install MSYS2 and GTK4
+        run: |
+          choco install msys2 -y
+          echo 'C:\msys64\usr\bin' >> $GITHUB_PATH
+          echo 'C:\msys64\mingw64\bin' >> $GITHUB_PATH
+
+          # MSYS2 to install GTK4 and Libadwaita
+          # This part might take a few minutes
+          $env:MSYS2_PATH_TYPE = 'inherit'
+          & C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-x86_64-gtk4 mingw-w64-x86_64-libadwaita mingw-w64-x86_64-pkg-config"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Cargo Tools
+        run: cargo install cargo-bundle
+
+      - name: Build Release Bundle
+        run: cargo bundle --format msi --release
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-packages
+          path: |
+            target/release/*.msi

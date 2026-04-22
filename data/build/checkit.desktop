@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=checkIT
+Comment=Native secure Ledger app for tracking data
+Exec=/usr/bin/checkit
+Icon=/usr/share/icons/hicolor/scalable/apps/checkit.svg
+Type=Application
+Categories=Utility;Application;
+Terminal=false

@@ -1,11 +1,14 @@
 [package]
 name = "checkit"
-version = "0.0.6"
+version = "0.0.7"
+authors = ["rdyards <rdyards@protonmail.com>"]
 edition = "2024"
+description = "Native secure Ledger app for tracking data"
+license = "LICENSE"
 
 [dependencies]
-gtk = { version = "0.11.1", package = "gtk4", features = ["v4_16"] }
-adw = { version = "0.9.1", package = "libadwaita", features = ["v1_8"] }
+gtk = { version = "0.11.1", package = "gtk4", features = ["v4_14"] }
+adw = { version = "0.9.1", package = "libadwaita", features = ["v1_5"] }
 glib = "0.22.3"
 sl = {git = "https://github.com/rdYards/sl.git"}
 tokio = { version = "1.52.1", features = ["full"] }
@@ -19,3 +22,27 @@ gethostname = "1.1.0"
 
 [build-dependencies]
 glib-build-tools = "0.22.0"
+
+[package.metadata.generate-rpm]
+name = "checkit"
+license = "LICENSE"
+summary = "Native secure Ledger app for tracking data"
+url = "https://github.com/rdYards/checkIT"
+assets = [
+    { source = "target/release/checkit", dest = "/usr/bin/checkit", mode = "755" },
+    { source = "data/build/checkit.desktop", dest = "/usr/share/applications/checkit.desktop", mode = "644" },
+    { source = "data/build/org.gtk-rs.CheckIT.svg", dest = "/usr/share/icons/hicolor/scalable/apps/checkit.svg", mode = "644" },
+]
+
+[package.metadataPublicApp.generate-rpm.requires]
+gtk4 = "*"
+"libadwaita-devel" = ">= 1.0"
+glib2 = "*"
+
+[package.metadata.bundle]
+name = "CheckIT"
+identifier = "org.gtk-rs.checkit"
+icon = ["data/build/org.gtk-rs.CheckIT.icns", "data/build/org.gtk-rs.CheckIT.svg"]
+copyright = "Copyright (c) 2026 rdYards. All rights reserved."
+osx_minimum_system_version = "10.13"
+deb_depends = ["libgtk-4-1", "libadwaita-1-0", "libglib2.0-0"]
