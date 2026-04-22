@@ -1,3 +1,3 @@
 # CheckIT User Manual
 
-Welcome to **CheckIT**, your secure, encrypted personal ledger application. CheckIT is designed to help you maintain organized, private, and tamper-proof records using industry-standard encryption. Whether you are tracking project milestones, managing personal logs, or maintaining sensitive notes, CheckIT ensures that only you—the holder of the password—can access your data.
+Welcome to **CheckIT**, your secure, encrypted personal ledger application. CheckIT is designed to help you maintain organized, private, and tamper-proof records using industry-standard encryption. Whether you are tracking project milestones, managing personal logs, or maintaining sensitive notes, CheckIT ensures that only you, the holder of the password, can access your data.
