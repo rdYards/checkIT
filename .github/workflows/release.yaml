@@ -97,22 +97,23 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+          choco install msys2 -y
       - name: Install MSYS2 and Toolchain
         run: |
-          choco install msys2 -y
           # Add MSYS2 bash to PATH for this step
           echo 'C:\msys64\usr\bin' >> $GITHUB_PATH
 
       - name: Setup UCRT64 Environment and Install Dependencies
         run: |
+          # Run inside MSYS2 UCRT64 shell
           & C:\msys64\usr\bin\bash.exe -l -c "
+            # Update pacman and install toolchain
             pacman -Syu --noconfirm --needed \
               mingw-w64-ucrt-x86_64-toolchain \
               mingw-w64-ucrt-x86_64-gtk4 \
               mingw-w64-ucrt-x86_64-libadwaita \
               mingw-w64-ucrt-x86_64-glib2 \
-              mingw-w64-ucrt-x86_64-pkgconf \
-              mingw-w64-ucrt-x86_64-base-devel
+              mingw-w64-ucrt-x86_64-pkg-config
           "
 
       - name: Configure Environment for Rust
