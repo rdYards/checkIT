@@ -104,7 +104,7 @@ jobs:
           echo 'C:\msys64\usr\bin' >> $GITHUB_PATH
 
       - name: Setup UCRT64 Environment and Install Dependencies
-        shell: bash
+        shell: C:\msys64\usr\bin\bash.exe -l {0}
         run: |
           # Update pacman and install toolchain
           pacman -Syu --noconfirm --needed \
