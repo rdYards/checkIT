@@ -3,7 +3,7 @@ name: Release Bundles
 on:
   push:
     tags:
-      - "v*" # Runs whenever you push a tag like v0.0.6
+      - "v*"
 
 jobs:
   # Deb, RPM
@@ -37,7 +37,7 @@ jobs:
 
       - name: Build RPM Package
         run: cargo generate-rpm
-        
+
       - name: Consolidate Artifacts
         run: |
           mkdir -p target/release/packages
@@ -55,10 +55,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install System Dependencies
+        run: brew install gtk4 libadwaita pkgconf meson
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-apple-darwin,aarch64-apple-darwin
+          targets: aarch64-apple-darwin
 
       - name: Cache Cargo
         uses: actions/cache@v5
@@ -69,35 +72,28 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build x86_64
-        run: cargo build --release --target x86_64-apple-darwin
-
       - name: Build aarch64
         run: cargo build --release --target aarch64-apple-darwin
 
       - name: Install Cargo Tools
         run: cargo install cargo-bundle
 
-      - name: Create Universal Bundle
+      - name: Build Release
+        run: cargo build --release
+
+      - name: Create Bundle
+        run: cargo bundle --format osx --release
+
+      - name: Zip macOS Bundle
         run: |
-          # Create the .app bundle for aarch64
-          cargo bundle --format osx --target aarch64-apple-darwin --release
-
-          # Create a universal binary and inject it into the bundle
-          mkdir -p target/universal/release
-          lipo -create \
-            target/x86_64-apple-darwin/release/checkit \
-            target/aarch64-apple-darwin/release/checkit \
-            -output target/universal/release/checkit
-
-          # Replace the binary inside the .app bundle with our universal version
-          cp target/universal/release/checkit target/aarch64-apple-darwin/release/CheckIT.app/Contents/MacOS/CheckIT
+          cd target/release
+          zip -r CheckIT-macos.zip CheckIT.app
 
       - name: Upload Universal Bundle
         uses: actions/upload-artifact@v7
         with:
           name: universal-macos-bundle
-          path: target/aarch64-apple-darwin/release/CheckIT.app
+          path: target/release/CheckIT-macos.zip
 
   windows-release:
     runs-on: windows-latest
@@ -109,11 +105,15 @@ jobs:
           choco install msys2 -y
           echo 'C:\msys64\usr\bin' >> $GITHUB_PATH
           echo 'C:\msys64\mingw64\bin' >> $GITHUB_PATH
+          echo 'C:\msys64\mingw64\lib\pkgconfig' >> $GITHUB_PATH
 
           # MSYS2 to install GTK4 and Libadwaita
           # This part might take a few minutes
           $env:MSYS2_PATH_TYPE = 'inherit'
           & C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-x86_64-gtk4 mingw-w64-x86_64-libadwaita mingw-w64-x86_64-pkg-config"
+
+          # Tell pkg-config where to find the .pc files
+          echo "PKG_CONFIG_PATH=C:\msys64\mingw64\lib\pkgconfig" >> $GITHUB_ENV
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -130,3 +130,25 @@ jobs:
           name: windows-packages
           path: |
             target/release/*.msi
+            
+  release:
+    name: Create Release
+    needs: [linux-release, macos-release, windows-release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            artifacts/linux-packages/*.deb
+            artifacts/linux-packages/*.rpm
+            artifacts/windows-packages/*.msi
+            artifacts/universal-macos-bundle/CheckIT-macos.zip
+          generate_release_notes: tru
