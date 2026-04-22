@@ -100,20 +100,33 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install MSYS2 and GTK4
+      - name: Install MSYS2 and Toolchain
         run: |
           choco install msys2 -y
+          # Add MSYS2 bash to PATH for this step
           echo 'C:\msys64\usr\bin' >> $GITHUB_PATH
-          echo 'C:\msys64\mingw64\bin' >> $GITHUB_PATH
-          echo 'C:\msys64\mingw64\lib\pkgconfig' >> $GITHUB_PATH
 
-          # MSYS2 to install GTK4 and Libadwaita
-          # This part might take a few minutes
-          $env:MSYS2_PATH_TYPE = 'inherit'
-          & C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-x86_64-gtk4 mingw-w64-x86_64-libadwaita mingw-w64-x86_64-pkg-config"
+      - name: Setup UCRT64 Environment and Install Dependencies
+        run: |
+          # Run inside MSYS2 UCRT64 shell
+          & C:\msys64\usr\bin\bash.exe -l -c "
+            # Update pacman and install toolchain
+            pacman -Syu --noconfirm --needed \
+              mingw-w64-ucrt-x86_64-toolchain \
+              mingw-w64-ucrt-x86_64-gtk4 \
+              mingw-w64-ucrt-x86_64-libadwaita \
+              mingw-w64-ucrt-x86_64-pkgconf \
+              mingw-w64-ucrt-x86_64-glib2
+          "
 
-          # Tell pkg-config where to find the .pc files
-          echo "PKG_CONFIG_PATH=C:\msys64\mingw64\lib\pkgconfig" >> $GITHUB_ENV
+      - name: Configure Environment for Rust
+        run: |
+          # Add UCRT64 bin to PATH (where gcc, pkg-config, etc. are)
+          echo 'C:\msys64\ucrt64\bin' >> $GITHUB_PATH
+          # Set PKG_CONFIG_PATH using Unix-style path (used inside MSYS2)
+          echo 'PKG_CONFIG_PATH=/ucrt64/lib/pkgconfig' >> $GITHUB_ENV
+          # Ensure Rust uses the right linker and tools
+          echo 'CC=/ucrt64/bin/gcc' >> $GITHUB_ENV
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -130,7 +143,7 @@ jobs:
           name: windows-packages
           path: |
             target/release/*.msi
-            
+
   release:
     name: Create Release
     needs: [linux-release, macos-release, windows-release]

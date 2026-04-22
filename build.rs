@@ -11,7 +11,8 @@ fn main() {
     println!("cargo:rerun-if-changed=data/org.gtk_rs.CheckIT.gschema.xml");
 
     // Get the output directory
-    let out_dir = std::env::var("OUT_DIR").unwrap();
+    let out_dir = std::env::var("OUT_MS_DIR").unwrap_or_else(|_| "target/debug".to_string());
+    let out_dir = std::env::var("OUT_DIR").unwrap_or_else(|_| "target/debug".to_string());
     let data_dir = Path::new(&out_dir).join("data");
 
     // Create the directory if it doesn't exist
@@ -25,19 +26,20 @@ fn main() {
     );
 
     // macOS Icon Generation
-    // We check the target OS via an environment variable set by Cargo.
-    // This allows us to attempt icon generation when cross-compiling for macOS.
-    if let Ok(target_ss) = std::env::var("CARGO_TARGET_OS") {
-        if target_ss == "macos" {
-            let svg_source = "data/build/org.gtk-rs.CheckIT.svg";
-            let icns_dest = "data/build/org.gtk-rs.CheckIT.icns";
+    let target_os = std::env::var("TARGET_OS").unwrap_or_default();
+    let svg_source = "data/build/org.gtk-rs.CheckIT.svg";
+    let icns_dest = "data/build/org.gtk-rs.CheckIT.icns";
 
-            if Path::new(svg_source).exists() {
-                if let Err(e) = generate_macos_icon(svg_source, icns_dest) {
-                    // We use a warning so the build doesn't fail on Linux
-                    // if the required macOS tools are missing.
-                    println!("cargo:warning=Failed to generate macOS icon: {}", e);
-                }
+    if Path::new(svg_source).exists() {
+        if target_os == "macos" {
+            if let Err(e) = generate_macos_icon(svg_source, icns_dest) {
+                println!("cargo:warning=Failed to generate macOS icon: {}", e);
+            }
+        } else {
+            // Fallback for non-macOS builds (e.g. Linux) to satisfy bundlers
+            // that expect the .icns file to exist in the metadata.
+            if !Path::new(icns_dest).exists() {
+                let _ = fs::copy(svg_source, icns_dest);
             }
         }
     }
@@ -92,7 +94,7 @@ fn main() {
             .arg("icns")
             .arg(iconset_dir)
             .status()?;
-        
+
         if !status.success() {
             return Err("iconutil failed to create icns file".into());
         }
