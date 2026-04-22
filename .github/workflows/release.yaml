@@ -133,7 +133,11 @@ jobs:
         run: cargo install cargo-bundle
 
       - name: Build Release Bundle
-        run: cargo bundle --format msi --release
+        run: |
+          C:\msys64\usr\bin\bash.exe -l -c "
+            cargo build --release --target x86_64-pc-windows-gnu
+            cargo bundle --format msi --release
+          "
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v7
