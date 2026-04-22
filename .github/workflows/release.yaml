@@ -72,22 +72,19 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build aarch64
-        run: cargo build --release --target aarch64-apple-darwin
-
       - name: Install Cargo Tools
         run: cargo install cargo-bundle
 
-      - name: Build Release
-        run: cargo build --release
+      - name: Build aarch64
+        run: cargo build --release --target aarch64-apple-darwin
 
       - name: Create Bundle
         run: cargo bundle --format osx --release
 
       - name: Zip macOS Bundle
         run: |
-          cd target/release
-          zip -r CheckIT-macos.zip CheckIT.app
+          cd target/release/bundle/osx && \
+          zip -r ../../../CheckIT-macos.zip CheckIT.app
 
       - name: Upload Universal Bundle
         uses: actions/upload-artifact@v7
@@ -116,7 +113,8 @@ jobs:
               mingw-w64-ucrt-x86_64-gtk4 \
               mingw-w64-ucrt-x86_64-libadwaita \
               mingw-w64-ucrt-x86_64-pkgconf \
-              mingw-w64-ucrt-x86_64-glib2
+              mingw-w64-ucrt-x86_64-glib2 \
+              mingw-w64-ucrt-x86_64-pkg-config
           "
 
       - name: Configure Environment for Rust
