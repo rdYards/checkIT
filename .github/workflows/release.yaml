@@ -97,9 +97,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-          choco install msys2 -y
       - name: Install MSYS2 and Toolchain
         run: |
+          choco install msys2 -y
           # Add MSYS2 bash to PATH for this step
           echo 'C:\msys64\usr\bin' >> $GITHUB_PATH
 
