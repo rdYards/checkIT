@@ -11,7 +11,6 @@ fn main() {
     println!("cargo:rerun-if-changed=data/org.gtk_rs.CheckIT.gschema.xml");
 
     // Get the output directory
-    let out_dir = std::env::var("OUT_MS_DIR").unwrap_or_else(|_| "target/debug".to_string());
     let out_dir = std::env::var("OUT_DIR").unwrap_or_else(|_| "target/debug".to_string());
     let data_dir = Path::new(&out_dir).join("data");
 
@@ -26,7 +25,7 @@ fn main() {
     );
 
     // macOS Icon Generation
-    let target_os = std::env::var("TARGET_OS").unwrap_or_default();
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let svg_source = "data/build/org.gtk-rs.CheckIT.svg";
     let icns_dest = "data/build/org.gtk-rs.CheckIT.icns";
 
@@ -36,10 +35,8 @@ fn main() {
                 println!("cargo:warning=Failed to generate macOS icon: {}", e);
             }
         } else {
-            // Fallback for non-macOS builds (e.g. Linux) to satisfy bundlers
-            // that expect the .icns file to exist in the metadata.
-            if !Path::new(icns_dest).exists() {
-                let _ = fs::copy(svg_source, icns_dest);
+            if let Err(e) = fs::remove_file(icns_dest) {
+                eprintln!("{}", e);
             }
         }
     }
