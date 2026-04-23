@@ -97,30 +97,40 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Configure Environment for Rust
+      - name: Install MSYS2 and GLib
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ucrt64
+          install: >-
+            base-devel,
+            mingw-w64-ucrt-x86_64-gtk4,
+            mingw-w64-ucrt-x86_64-pkg-config
+
+      - name: Configure Environment
         run: |
           echo 'PKG_CONFIG_ALLOW_CROSS=1' >> $GITHUB_ENV
-          echo 'PKG_CONFIG_PATH=C:\msys64\ucrt64\lib\pkgconfig' >> $GITHUB_ENV
+          echo 'PKG_CONFIG_PATH=/ucrt64/lib/pkgconfig' >> $GITHUB_ENV
+        shell: bash
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
 
-      - name: Install Cargo Tools
+      - name: Install Cargo Bundle
         run: cargo install cargo-bundle
 
       - name: Build and Bundle
         run: |
           cargo build --release --target x86_64-pc-windows-msvc
-          cargo bundle --format msi --release
+          cargo bundle --format msi --release --target x86_64-pc-windows-msvc
+        shell: bash
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v7
         with:
           name: windows-packages
-          path: |
-            target/x86_64-pc-windows-gnu/release/*.msi
+          path: target/wix/*.msi
 
   release:
     name: Create Release
