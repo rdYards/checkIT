@@ -1,24 +1,24 @@
 ## Window Management
 These shortcuts control the application window and general information.
 
-| Shortcut | Action |
-| :--- | :--- |
+| Shortcut   | Action                   |
+| :--------- | :----------------------- |
 | `Ctrl + W` | Close the current window |
-| `Ctrl + A` | About App |
-| `Ctrl + K` | Keybindings reference |
+| `Ctrl + A` | Open About App window    |
+| `Ctrl + K` | Open Keybinds window     |
 
 ## Ledger Management
 Use these shortcuts to manage your different ledger files and their states.
 
-| Shortcut | Action |
-| :--- | :--- |
-| `Ctrl + N` | Create a new ledger |
-| `Ctrl + I` | Load/Import an existing ledger |
-| `Ctrl + S` | Save changes to the current ledger |
-| `Ctrl + Shift + S` | Save a copy of the ledger (Export) |
-| `Ctrl + E` | Share the current ledger |
-| `Ctrl + Delete` | Remove the current ledger |
-| `Ctrl + Shift + C` | Clone the current ledger to a new instance |
+| Shortcut           | Action                                                        |
+| :----------------- | :------------------------------------------------------------ |
+| `Ctrl + N`         | Create a new ledger                                           |
+| `Ctrl + I`         | Load/Import an existing Ledger from disk                      |
+| `Ctrl + S`         | Save changes to the currently selected Ledger                 |
+| `Ctrl + Shift + S` | Save/Export a copy of the currently selected Ledger           |
+| `Ctrl + E`         | Share the currently selected Ledger of the network (LAN only) |
+| `Ctrl + Delete`    | Remove the currently selected Ledger                          |
+| `Ctrl + Shift + C` | Clone the currently selected Ledger to a new Ledger           |
 
 ## Navigation
 Quickly cycle through your open ledgers using your keyboard.
@@ -29,13 +29,10 @@ Quickly cycle through your open ledgers using your keyboard.
 | `Ctrl + Shift + Tab` | Switch to the previous ledger |
 
 ## Entry Manipulation
-When you are viewing a specific ledger, you can use these **Alt-based** shortcuts to interact with the data entries.
+When viewing a specific ledger, you can use the following Alt-based shortcuts to interact with the data entries.
 
-| Shortcut | Action |
-| :--- | :--- |
-| `Alt + E` | Add Entry |
-| `Alt + D` | Remove Entry |
-| `Alt + F` | Search Entries |
-
----
-*Tip: If you ever forget a shortcut, press `Ctrl + K` to bring up the reference list.*
+| Shortcut  | Action                                     |
+| :-------- | :----------------------------------------- |
+| `Alt + E` | Create and add a new Entry                 |
+| `Alt + D` | Delete and remove the selected Entry       |
+| `Alt + F` | Push focus to selected Ledger’s search bar |

@@ -5,6 +5,7 @@
 - Update Ledger Pages to match ledger name
 - Interface with Ledger Logging
 - Interface with App logging / Report errors
+- Allow multiple Entries to be selected at the same time
 
 ### **Fix**
 - Fix width for adding Entry
