@@ -102,9 +102,10 @@ jobs:
         with:
           msystem: ucrt64
           install: >-
-            base-devel,
-            mingw-w64-ucrt-x86_64-gtk4,
+            base-devel
+            mingw-w64-ucrt-x86_64-gtk4
             mingw-w64-ucrt-x86_64-pkg-config
+          update: true
 
       - name: Configure Environment
         run: |
