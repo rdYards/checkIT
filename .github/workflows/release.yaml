@@ -107,6 +107,12 @@ jobs:
             mingw-w64-ucrt-x86_64-pkg-config
           update: true
 
+      - name: Add MSYS2 to PATH
+        run: |
+          echo "C:\msys64\ucrt64\bin" >> $GITHUB_PATH
+          echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
+        shell: bash
+
       - name: Configure Environment
         run: |
           echo 'PKG_CONFIG_ALLOW_CROSS=1' >> $GITHUB_ENV
