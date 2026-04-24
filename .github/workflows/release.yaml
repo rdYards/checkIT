@@ -109,15 +109,14 @@ jobs:
 
       - name: Add MSYS2 to PATH
         run: |
-          echo "C:\msys64\ucrt64\bin" >> $GITHUB_PATH
-          echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
-        shell: bash
+          echo "C:\msys64\ucrt64\bin" >> $env:GITHUB_PATH
+        shell: pwsh
 
       - name: Configure Environment
         run: |
-          echo 'PKG_CONFIG_ALLOW_CROSS=1' >> $GITHUB_ENV
-          echo 'PKG_CONFIG_PATH=/ucrt64/lib/pkgconfig' >> $GITHUB_ENV
-        shell: bash
+          echo "PKG_CONFIG_PATH=C:\msys64\ucrt64\lib\pkgconfig" >> $env:GITHUB_ENV
+          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $env:GITHUB_ENV
+        shell: pwsh
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -130,7 +129,6 @@ jobs:
       - name: Build and Bundle
         run: |
           cargo build --release --target x86_64-pc-windows-msvc
-          cargo bundle --format msi --release --target x86_64-pc-windows-msvc
         shell: bash
 
       - name: Upload Windows Artifacts
