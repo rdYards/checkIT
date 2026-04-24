@@ -97,6 +97,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Set Environment Variables
+        run: |
+          echo "VCPKG_ROOT=C:\tools\vcpkg" >> $env:GITHUB_ENV
+          echo "VCPKG_DEFAULT_TRIPLET=x64-windows" >> $env:GITHUB_ENV
+          echo "PKG_CONFIG_PATH=C:\tools\vcpkg\installed\x64-windows\lib\pkgconfig" >> $env:GITHUB_ENV
+          echo "CMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: Cache vcpkg libraries
         uses: actions/cache@v4
         with:
@@ -108,23 +116,7 @@ jobs:
             ${{ runner.os }}-vcpkg-gtk4-
 
       - name: Install GTK4 via vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: "f1a1888"
-          vcpkgArguments: "gtk4:x64-windows"
-          vcpkgDirectory: 'C:\tools\vcpkg'
-
-      - name: Set Environment Variables
-        run: |
-          echo "VCPKG_ROOT=C:\tools\vcpkg" >> $env:GITHUB_ENV
-          echo "VCPKG_DEFAULT_TRIPLET=x64-windows" >> $env:GITHUB_ENV
-          echo "PKG_CONFIG_PATH=C:\tools\vcpkg\installed\x64-windows\lib\pkgconfig" >> $env:GITHUB_ENV
-          echo "CMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake" >> $env:GITHUB_ENV
-        shell: pwsh
-
-      - name: Set CMake Toolchain
-        run: |
-          echo "CMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake" >> $env:GITHUB_ENV
+        run: vcpkg install gtk4:x64-windows
         shell: pwsh
 
       - name: Install Rust
