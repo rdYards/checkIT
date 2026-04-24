@@ -97,25 +97,32 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install MSYS2 and GLib
-        uses: msys2/setup-msys2@v2
+      - name: Cache vcpkg libraries
+        uses: actions/cache@v4
         with:
-          msystem: ucrt64
-          install: >-
-            base-devel
-            mingw-w64-ucrt-x86_64-gtk4
-            mingw-w64-ucrt-x86_64-pkg-config
-          update: true
+          path: |
+            C:\tools\vcpkg\installed
+            C:\tools\vcpog\packages
+          key: ${{ runner.os }}-vcpkg-gtk4-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-gtk4-
 
-      - name: Add MSYS2 to PATH
+      - name: Install GTK4 via vcpkg
         run: |
-          echo "C:\msys64\ucrt64\bin" >> $env:GITHUB_PATH
+          vcpkg install gtk4:x64-windows
         shell: pwsh
 
-      - name: Configure Environment
+      - name: Set Environment Variables
         run: |
-          echo "PKG_CONFIG_PATH=C:\msys64\ucrt64\lib\pkgconfig" >> $env:GITHUB_ENV
-          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $env:GITHUB_ENV
+          # Add the vcpkg installed bin folder to PATH so DLLs are found at runtime/build time
+          echo "C:\tools\vcpkg\installed\x64-windows\bin" >> $env:GITHUB_PATH
+
+          # Tell Rust/Cargo where to find the vcpkg libraries
+          echo "VCPKG_ROOT=C:\tools\vcpkg" >> $env:GITHUB_ENV
+          echo "VCPKG_TARGET_TRIPLET=x64-windows" >> $env:GITHUB_ENV
+
+          # Ensure pkg-config looks in the vcpkg directory
+          echo "PKG_CONFIG_PATH=C:\tools\vcpkg\installed\xtest\x64-windows\lib\pkgconfig" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: Install Rust
@@ -125,11 +132,13 @@ jobs:
 
       - name: Install Cargo Bundle
         run: cargo install cargo-bundle
+        shell: pwsh
 
       - name: Build and Bundle
         run: |
           cargo build --release --target x86_64-pc-windows-msvc
-        shell: bash
+          cargo bundle --format msi --release --target x86_64-pc-windows-msvc
+        shell: pwsh
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v7
