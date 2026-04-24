@@ -116,7 +116,7 @@ jobs:
             ${{ runner.os }}-vcpkg-gtk4-
 
       - name: Install GTK4 via vcpkg
-        run: vcpkg install gtk4:x64-windows
+        run: vcpkg install gtk
         shell: pwsh
 
       - name: Install Rust
