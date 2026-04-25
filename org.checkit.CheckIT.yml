@@ -1,0 +1,14 @@
+app-id: org.checkit.CheckIT
+runtime: org.gnome.Platform
+runtime-version: '45'
+sdk: org.gnome.Sdk
+command: checkit
+modules:
+  - name: checkit
+    buildsystem: simple
+    build-commands:
+      - cargo build --release
+      - cp target/release/checkit /app/bin/checkit
+    sources:
+      - type: dir
+        path: .

@@ -24,9 +24,7 @@ jobs:
 
       - name: Build Flatpak
         run: |
-          # --install-deps-from=flathub pulls the GNOME SDK/Runtime automatically
-          # --force-modules ensures it uses the source code in the current directory
-          flatpak-builder --force-modules --install-deps-from=flathub build-dir org.checkit.CheckIT.yml
+          flatpak-builder --install-deps-from=flathub build-dir org.checkit.CheckIT.yml
 
       - name: Bundle Flatpak
         run: |
