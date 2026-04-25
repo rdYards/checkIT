@@ -6,6 +6,40 @@ on:
       - "v*"
 
 jobs:
+  # FLATPAK RELEASE
+  flatpak-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Flatpak and Builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+
+      - name: Add Flathub Remote and Install Runtime
+        run: |
+          flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak --user install -y flathub org.gnome.Platform//45 org.gnome.Sdk//45
+
+      - name: Build Flatpak
+        run: |
+          # --install-deps-from=flathub pulls the GNOME SDK/Runtime automatically
+          # --force-modules ensures it uses the source code in the current directory
+          flatpak-builder --force-modules --install-deps-from=flathub build-dir org.checkit.CheckIT.yml
+
+      - name: Bundle Flatpak
+        run: |
+          mkdir -p output
+          flatpak build-bundle build-dir checkit.flatpak org.checkit.CheckIT
+          cp checkit.flatpak output/
+
+      - name: Upload Flatpak Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: flatpak-package
+          path: output/checkit.flatpak
+
   # Deb, RPM
   linux-release:
     runs-on: ubuntu-latest
@@ -76,10 +110,21 @@ jobs:
         run: cargo install cargo-bundle
 
       - name: Build aarch64
+        env:
+          SDKROOT: $(xcrun --sdk macosx --show-sdk-path)
+          MACOSX_DEPLOYMENT_TARGET: 14.0
         run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Remove Quarantine Attribute
+        run: |
+          xattr -rd com.apple.quarantine target/release || true
 
       - name: Create Bundle
         run: cargo bundle --format osx --release
+        
+      - name: Ad-hoc Sign App
+        run: |
+          codesign --deep -s - target/release/bundle/osx/CheckIT.app   
 
       - name: Zip macOS Bundle
         run: |
@@ -140,13 +185,13 @@ jobs:
 
   release:
     name: Create Release
-    needs: [linux-release, macos-release]
+    needs: [linux-release, macos-release, flatpak-release]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -156,6 +201,6 @@ jobs:
           files: |
             artifacts/linux-packages/*.deb
             artifacts/linux-packages/*.rpm
-            artifacts/windows-packages/*.msi
             artifacts/universal-macos-bundle/CheckIT-macos.zip
+            artifacts/flatpak-package/*.flatpak
           generate_release_notes: true
