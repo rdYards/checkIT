@@ -140,7 +140,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: [linux-release, macos-release, windows-release]
+    needs: [linux-release, macos-release]
     runs-on: ubuntu-latest
     permissions:
       contents: write
