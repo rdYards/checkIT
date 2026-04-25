@@ -92,57 +92,51 @@ jobs:
           name: universal-macos-bundle
           path: target/release/CheckIT-macos.zip
 
-  windows-release:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
+  # Commenting out until a solution can be found
+  # windows-release:
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v6
 
-      - name: Install pkg-config
-        run: choco install pkgconfiglite -y
-        shell: pwsh
+  #     - name: Install pkg-config
+  #       run: choco install pkgconfiglite -y
+  #       shell: pwsh
 
-      - name: Set Environment Variables
-        run: |
-          echo "VCPKG_ROOT=C:\tools\vcpkg" >> $env:GITHUB_ENV
-          echo "VCPKG_DEFAULT_TRIPLET=x64-windows" >> $env:GITHUB_ENV
-          echo "PKG_CONFIG_PATH=C:\tools\vcpkg\installed\x64-windows\lib\pkgconfig" >> $env:GITHUB_ENV
-          echo "CMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake" >> $env:GITHUB_ENV
-        shell: pwsh
+  #     - name: Install MSYS2
+  #       uses: msys2/setup-msys2@v2
+  #       with:
+  #         msystem: MINGW64
+  #         install: >-
+  #           mingw-w64-x86_64-toolchain
+  #           mingw-w64-x86_64-pkg-config
+  #           mingw-w64-x86_64-gtk4
 
-      - name: Cache vcpkg libraries
-        uses: actions/cache@v4
-        with:
-          path: |
-            C:\tools\vcpkg\installed
-            C:\tools\vcpkg\packages
-          key: ${{ runner.os }}-vcpkg-gtk4-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-vcpkg-gtk4-
+  #     - name: Add MSYS2 to PATH
+  #       run: |
+  #         echo "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+  #         echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+  #       shell: pwsh
 
-      - name: Install GTK4 via vcpkg
-        run: vcpkg install gtk
-        shell: pwsh
+  #     - name: Install Rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         targets: x86_64-pc-windows-msvc
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-pc-windows-msvc
+  #     - name: Install Cargo Bundle
+  #       run: cargo install cargo-bundle
+  #       shell: pwsh
 
-      - name: Install Cargo Bundle
-        run: cargo install cargo-bundle
-        shell: pwsh
+  #     - name: Build and Bundle
+  #       run: |
+  #         cargo build --release --target x86_64-pc-windows-msvc
+  #         cargo bundle --format msi --release --target x86_64-pc-windows-msvc
+  #       shell: pwsh
 
-      - name: Build and Bundle
-        run: |
-          cargo build --release --target x86_64-pc-windows-msvc
-          cargo bundle --format msi --release --target x86_64-pc-windows-msvc
-        shell: pwsh
-
-      - name: Upload Windows Artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: windows-packages
-          path: target/wix/*.msi
+  #     - name: Upload Windows Artifacts
+  #       uses: actions/upload-artifact@v7
+  #       with:
+  #         name: windows-packages
+  #         path: target/wix/*.msi
 
   release:
     name: Create Release
