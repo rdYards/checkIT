@@ -16,6 +16,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y flatpak flatpak-builder
+          
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Add Flathub Remote and Install Runtime
         run: |
