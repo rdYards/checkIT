@@ -46,3 +46,4 @@ icon = ["data/build/org.gtk-rs.CheckIT.icns", "data/build/org.gtk-rs.CheckIT.svg
 copyright = "Copyright (c) 2026 rdYards. All rights reserved."
 osx_minimum_system_version = "10.13"
 deb_depends = ["libgtk-4-1", "libadwaita-1-0", "libglib2.0-0"]
+resources = ["data/gschemas.compiled"]

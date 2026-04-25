@@ -19,8 +19,8 @@ jobs:
 
       - name: Add Flathub Remote and Install Runtime
         run: |
-          flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak --user install -y flathub org.gnome.Platform//45 org.gnome.Sdk//45
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.gnome.Platform//45 org.gnome.Sdk//45
 
       - name: Build Flatpak
         run: |
@@ -53,6 +53,13 @@ jobs:
             pkg-config \
             libglib2.0-dev \
             build-essential
+            
+      - name: Compile GSettings Schemas
+        run: |
+          mkdir -p data/gschemas
+          cp data/*.gschema.xml data/gschemas/ || true
+          glib-compile-schemas data/gschemas/
+          cp data/gschemas/gschemas.compiled data/
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -106,6 +113,13 @@ jobs:
 
       - name: Install Cargo Tools
         run: cargo install cargo-bundle
+        
+      - name: Compile GSettings Schemas
+        run: |
+          mkdir -p data/gschemas
+          cp data/*.gschema.xml data/gschemas/ || true
+          glib-compile-schemas data/gschemas/
+          cp data/gschemas/gschemas.compiled data/
 
       - name: Build aarch64
         env:
@@ -119,10 +133,10 @@ jobs:
 
       - name: Create Bundle
         run: cargo bundle --format osx --release
-        
+
       - name: Ad-hoc Sign App
         run: |
-          codesign --deep -s - target/release/bundle/osx/CheckIT.app   
+          codesign --deep -s - target/release/bundle/osx/CheckIT.app
 
       - name: Zip macOS Bundle
         run: |
