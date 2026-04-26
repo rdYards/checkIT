@@ -901,6 +901,15 @@ impl PageManager {
             btn_box.append(&lbl);
             btn.set_child(Some(&btn_box));
 
+            // Fix issue where popup does not disappear when clicked
+            btn.connect_clicked(glib::clone!(
+                #[weak]
+                popover,
+                move |_| {
+                    popover.popdown();
+                }
+            ));
+
             popover_content.append(&btn);
         }
 
