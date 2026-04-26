@@ -416,7 +416,7 @@ impl PageManager {
         data_entry.set_title("Data");
         content.add(&data_entry);
         dialog.set_extra_child(Some(&content));
-
+        dialog.set_width_request(600);
         dialog.add_response("cancel", "Cancel");
         dialog.add_response("add", "Add");
         dialog.set_response_appearance("add", ResponseAppearance::Suggested);
