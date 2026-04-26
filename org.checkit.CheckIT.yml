@@ -1,9 +1,10 @@
-app-id: org.checkit.CheckIT
+app-id: org.rdyards.CheckIT
 runtime: org.gnome.Platform
 runtime-version: "50"
 sdk: org.gnome.Sdk
 command: checkit
 finish-args:
+  - "--own-name=org.rdyards.CheckIT"
   - "--share=ipc"
   - "--socket=wayland"
   - "--socket=fallback-x11"
