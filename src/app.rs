@@ -15,7 +15,6 @@ use std::{rc::Rc, sync::Arc};
 use tokio::sync::mpsc;
 
 use crate::{
-    APP_ID,
     data::{data_model::DataModel, ledger_db::LedgerDatabase},
     p2p::{
         messenger::{IncomingTransfer, P2PManager},
