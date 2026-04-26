@@ -1,6 +1,8 @@
 AdwApplicationWindow {
     font-family: var(--monospace-font-family);
     font-size: var(--monospace-font-size);
+    background-color: var(--window-bg-color);
+    color: var(--window-fg-color);
 }
 
 AdwHeaderBar {

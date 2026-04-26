@@ -4,13 +4,13 @@ mod p2p;
 mod ui;
 
 use adw::{
-    Application, gio,
+    Application, ColorScheme, StyleManager, gio,
     gio::Resource,
     prelude::{ApplicationExt, ApplicationExtManual},
 };
 use glib;
 
-const APP_ID: &str = "org.gtk_rs.CheckIT";
+const APP_ID: &str = "org.rdyards.CheckIT";
 const DEFAULT_FILE_PATH: &str = "~/";
 
 #[tokio::main]
@@ -21,7 +21,12 @@ async fn main() -> glib::ExitCode {
     let res = Resource::from_data(&bytes).expect("Failed to load resources");
     gio::resources_register(&res);
 
+    // Create the application
     let app = Application::builder().application_id(APP_ID).build();
+
+    // Set default color scheme
+    let style_manager = StyleManager::default();
+    style_manager.set_color_scheme(ColorScheme::PreferLight);
 
     app.connect_activate(|app| {
         app::build_app(app);
