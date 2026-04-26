@@ -11,5 +11,5 @@
 - **Fix Compact View** *prevents macos at startup from working*
 
 ### **Macos**
-- Fix Icons
+- Fix Icon
 - figure out how to respect system color preference

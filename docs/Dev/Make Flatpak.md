@@ -28,7 +28,7 @@ uv lock -o uv.lock
 
 1. Run the flatpak-builder command to create the bundle:
 ```bash
-flatpak-builder --force-clean target/flatpak org.gtk_rs.CheckIT.json
+flatpak-builder --force-clean target/flatpak org.rdyards.CheckIT.json
 ```
 
 ## Installation
@@ -37,7 +37,7 @@ After building, you can install the Flatpak locally:
 
 1. Install the bundle:
 ```bash
-flatpak install target/flatpak/org.gtk-rs.CheckIT.*.flatpak
+flatpak install target/flatpak/org.rdyards.CheckIT.*.flatpak
 ```
 
 ## Development Workflow
@@ -46,12 +46,12 @@ For development, you can use the following commands:
 
 1. Clean build:
 ```bash
-flatpak-builder --force-clean target/flatpak org.gtk_rs.CheckIT.json
+flatpak-builder --force-clean target/flatpak org.rdyards.CheckIT.json
 ```
 
 2. Build in developer mode (with permissions):
 ```bash
-flatpak-builder --user --install --force-clean target/flatpak org.gtk_rs.CheckIT.json
+flatpak-builder --user --install --force-clean target/flatpak org.rdyards.CheckIT.json
 ```
 ## Troubleshooting
 
@@ -67,7 +67,7 @@ flatpak install flathub org.gtk.Platform.Gtk3
 
 3. Check the build logs for specific errors:
 ```bash
-cat target/flatpak/build/org.gtk-rs.CheckIT.log
+cat target/flatpak/build/org.rdyards.CheckIT.log
 ```
 
 The resulting `.flatpak` file can be found in the `target/flatpak/` directory and can be distributed through various channels including:
