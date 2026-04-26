@@ -1,27 +1,31 @@
-First, install `cargo-deb` via Cargo:
+To create a Debian package (.deb) for CheckIT, follow these steps:
+## Prerequisites
 
+* `cargo-deb` installed
+* Rust 1.76 or later
+* Required build dependencies (libgtk-4-dev, libadwaita-1-dev, etc.)
+## Build Process
+
+1. Install the cargo-deb plugin if you haven't already:
 ```bash
 cargo install cargo-deb
 ```
 
-Ensure you're using a recent Rust version (1.76+ recommended). If you encounter build issues, update Rust:
-
-```bash
-rustup update
-```
-
-## Build the .deb Package
-
-Run the following command in your project’s root directory:
-
+2. Build the Debian package:
 ```bash
 cargo deb
 ```
 
-This will compile a .deb file to `target/debian/`
+3. The resulting .deb file will be in `target/debian/`
+## Installation
 
-*To build and install locally in one step:*
-
+To install the package after building:
 ```bash
-cargo deb --install
+sudo dpkg -i target/debian/checkit_*.deb
+```
+## Troubleshooting
+
+If you encounter dependency issues:
+```bash
+sudo apt --fix-broken install
 ```
