@@ -16,7 +16,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y flatpak flatpak-builder
-          
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -27,6 +27,7 @@ jobs:
 
       - name: Build Flatpak
         run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
           flatpak-builder --install-deps-from=flathub build-dir org.checkit.CheckIT.yml
 
       - name: Bundle Flatpak
@@ -56,13 +57,6 @@ jobs:
             pkg-config \
             libglib2.0-dev \
             build-essential
-            
-      - name: Compile GSettings Schemas
-        run: |
-          mkdir -p data/gschemas
-          cp data/*.gschema.xml data/gschemas/ || true
-          glib-compile-schemas data/gschemas/
-          cp data/gschemas/gschemas.compiled data/
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -116,13 +110,6 @@ jobs:
 
       - name: Install Cargo Tools
         run: cargo install cargo-bundle
-        
-      - name: Compile GSettings Schemas
-        run: |
-          mkdir -p data/gschemas
-          cp data/*.gschema.xml data/gschemas/ || true
-          glib-compile-schemas data/gschemas/
-          cp data/gschemas/gschemas.compiled data/
 
       - name: Build aarch64
         env:

@@ -5,10 +5,7 @@ sdk: org.gnome.Sdk
 command: checkit
 modules:
   - name: checkit
-    buildsystem: simple
-    build-commands:
-      - cargo build --release
-      - cp target/release/checkit /app/bin/checkit
+    buildsystem: cargo
     sources:
       - type: dir
         path: .

@@ -8,7 +8,6 @@ fn main() {
     println!("cargo:rerun-if-changed=data/resources/ui/window.ui");
     println!("cargo:rerun-if-changed=data/resources/ui/placeholder.ui");
     println!("cargo:rerun-if-changed=data/resources/style.css");
-    println!("cargo:rerun-if-changed=data/org.gtk_rs.CheckIT.gschema.xml");
 
     // Get the output directory
     let out_dir = std::env::var("OUT_DIR").unwrap_or_else(|_| "target/debug".to_string());

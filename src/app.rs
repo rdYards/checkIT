@@ -3,7 +3,7 @@ use adw::{
     HeaderBar, PasswordEntryRow, PreferencesGroup, ResponseAppearance, ViewStack,
     gdk::Display,
     gio,
-    gio::{ActionEntry, Settings},
+    gio::{ActionEntry},
     glib::clone,
     prelude::*,
 };
@@ -94,9 +94,6 @@ pub fn build_app(app: &Application) {
 
     window.set_application(Some(app));
     window.set_icon_name(Some("org.gtk-rs.CheckIT"));
-
-    let settings = Settings::new(APP_ID);
-    load_window_size(&window, &settings);
 
     // Setup P2P Channel
     let (p2p_tx, mut p2p_rx) = mpsc::unbounded_channel::<IncomingTransfer>();
@@ -837,17 +834,6 @@ pub fn popup_alert(window: &ApplicationWindow, title: &str, msg: &str) {
     dialog.add_response("ok", "OK");
     dialog.set_default_response(Some("ok"));
     dialog.present(Some(window));
-}
-
-/// Loads the window size from settings.
-fn load_window_size(window: &ApplicationWindow, settings: &Settings) {
-    let width = settings.int("window-width");
-    let height = settings.int("window-height");
-    let is_maximized = settings.boolean("is-maximized");
-    window.set_default_size(width, height);
-    if is_maximized {
-        window.maximize();
-    }
 }
 
 /// Loads the CSS provider.
