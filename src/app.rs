@@ -1,15 +1,11 @@
 use adw::{
     AboutDialog, ActionRow, AlertDialog, Application, ApplicationWindow, Dialog, EntryRow,
-    HeaderBar, PasswordEntryRow, PreferencesGroup, ResponseAppearance, ViewStack,
-    gdk::Display,
-    gio,
-    gio::{ActionEntry},
-    glib::clone,
-    prelude::*,
+    HeaderBar, PasswordEntryRow, PreferencesGroup, ResponseAppearance, ViewStack, gdk::Display,
+    gio, gio::ActionEntry, glib::clone, prelude::*,
 };
 use gtk::{
     Box as GTKBox, Builder, Button, CssProvider, FileDialog, IconTheme, Image, Label, License,
-    ListBox, MenuButton, Orientation, Popover, SearchEntry, Widget,
+    ListBox, MenuButton, Orientation, PolicyType, Popover, ScrolledWindow, SearchEntry, Widget,
 };
 use std::{rc::Rc, sync::Arc};
 use tokio::sync::mpsc;
@@ -139,7 +135,7 @@ pub fn build_app(app: &Application) {
                             .await
                         {
                             Ok(_decrypted_bytes) => {} // Add logging in the future
-                            Err(_e) => {} // Add logging in the future
+                            Err(_e) => {}              // Add logging in the future
                         }
                     });
                 }
@@ -570,6 +566,14 @@ fn setup_actions(
                     let dialog = Dialog::builder().title("Keybindings").build();
                     dialog.set_width_request(600);
 
+                    let scrolled_window = ScrolledWindow::builder()
+                        .hscrollbar_policy(PolicyType::Never)
+                        .min_content_height(400)
+                        .min_content_width(560)
+                        .propagate_natural_width(true)
+                        .propagate_natural_height(true)
+                        .build();
+
                     let main_box = GTKBox::new(Orientation::Vertical, 5);
 
                     let search_entry = SearchEntry::builder()
@@ -656,7 +660,8 @@ fn setup_actions(
                             }
                         }
                     }));
-                    dialog.set_child(Some(&main_box));
+                    scrolled_window.set_child(Some(&main_box));
+                    dialog.set_child(Some(&scrolled_window));
                     dialog.present(Some(&window));
                 }
             ))
