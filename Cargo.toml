@@ -1,6 +1,6 @@
 [package]
 name = "checkit"
-version = "0.0.8"
+version = "0.0.9"
 authors = ["rdyards <rdyards@protonmail.com>"]
 edition = "2024"
 description = "Native secure Ledger app for tracking data"
@@ -41,7 +41,7 @@ glib2 = "*"
 
 [package.metadata.bundle]
 name = "CheckIT"
-identifier = "org.gtk-rs.checkit"
+identifier = "org.rdyards.checkit"
 icon = ["data/build/org.gtk-rs.CheckIT.icns", "data/build/org.gtk-rs.CheckIT.svg"]
 copyright = "Copyright (c) 2026 rdYards. All rights reserved."
 osx_minimum_system_version = "10.13"
