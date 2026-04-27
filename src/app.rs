@@ -25,7 +25,7 @@ pub fn build_app(app: &Application) {
     // Import icon themes to use
     let display = Display::default().expect("Couldn't get default display");
     let icon_theme = IconTheme::for_display(&display);
-    icon_theme.add_resource_path("/org/gtk_rs/CheckIT/");
+    icon_theme.add_resource_path("/org/rdyards/CheckIT/");
 
     // Load CSS provider
     load_css();
@@ -37,7 +37,7 @@ pub fn build_app(app: &Application) {
 
     // Load window.ui for main page
     builder
-        .add_from_resource("/org/gtk_rs/CheckIT/window.ui")
+        .add_from_resource("/org/rdyards/CheckIT/window.ui")
         .expect("Failed to load window.ui");
 
     // Main window from window.ui
@@ -47,7 +47,7 @@ pub fn build_app(app: &Application) {
 
     // Load .ui for components for pages
     builder
-        .add_from_resource("/org/gtk_rs/CheckIT/placeholder.ui")
+        .add_from_resource("/org/rdyards/CheckIT/placeholder.ui")
         .expect("Failed to load placeholder.ui");
 
     // The actual placeholder content from placeholder.ui
@@ -193,7 +193,7 @@ fn setup_actions(
                         .application_icon("org.rdyards.CheckIT")
                         .version(env!("CARGO_PKG_VERSION"))
                         .license_type(License::Gpl20)
-                        .website("https://github.com/gtk-rs/checkit")
+                        .website("https://github.com/rdyards/checkit")
                         .issue_url("https://github.com/rdYards/checkIT/issues")
                         .developer_name("Alexander Eastman")
                         .build();
@@ -843,7 +843,7 @@ pub fn popup_alert(window: &ApplicationWindow, title: &str, msg: &str) {
 /// Loads the CSS provider.
 fn load_css() {
     let provider = CssProvider::new();
-    provider.load_from_resource("/org/gtk_rs/CheckIT/style.css");
+    provider.load_from_resource("/org/rdyards/CheckIT/style.css");
     if let Some(display) = Display::default() {
         gtk::style_context_add_provider_for_display(
             &display,
