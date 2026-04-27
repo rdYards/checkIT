@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <gresources>
   <gresource prefix="/org/gtk_rs/CheckIT">
-    <file alias="org.gtk-rs.CheckIT.svg">build/org.gtk-rs.CheckIT.svg</file>
+    <file alias="org.rdyards.CheckIT.svg">build/org.rdyards.CheckIT.svg</file>
   
     <!-- UI Files -->
     <file alias="style.css">resources/style.css</file>

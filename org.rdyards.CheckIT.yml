@@ -33,3 +33,5 @@ modules:
         path: .
     post-install:
       - install -Dm644 LICENSE /app/share/licenses/org.checkit.CheckIT/LICENSE
+      - install -Dm644 data/build/checkit.desktop /app/share/applications/checkit.desktop
+      - install -Dm644 data/build/org.rdyards.CheckIT.svg /app/share/icons/hicolor/scalable/apps/org.rdyards.CheckIT.svg

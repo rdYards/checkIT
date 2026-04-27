@@ -1,5 +1,5 @@
 {
-  "app-id": "org.gtk_rs.CheckIT",
+  "app-id": "org.rdyards.CheckIT",
   "runtime": "org.freedesktop.Platform",
   "runtime-version": "25.08",
   "sdk": "org.freedesktop.Sdk",
@@ -8,10 +8,12 @@
     "org.freedesktop.Sdk.Extension.gtk4"
   ],
   "command": "checkit",
-  "build-options": {
-    "append-path": "/usr/lib/sdk/rust-stable/bin",
-    "env": { "CARGO_HOME": "/run/build/checkit/cargo" }
-  },
+  "finish-args": [
+    "--share=ipc",
+    "--socket=wayland",
+    "--socket=x11",
+    "--filesystem=host"
+  ],
   "modules": [
     {
       "name": "checkit",
@@ -19,7 +21,9 @@
       "build-commands": [
         "cargo --offline fetch --manifest-path Cargo.toml",
         "cargo build --release --offline",
-        "install -Dm755 target/release/checkit /app/bin/checkit"
+        "install -Dm755 target/release/checkit /app/bin/checkit",
+        "install -Dm644 data/build/checkit.desktop /app/share/applications/checkit.desktop",
+        "install -Dm644 data/build/org.rdyards.CheckIT.svg /app/share/icons/hicolor/scalable/apps/checkit.svg"
       ],
       "sources": [{ "type": "dir", "path": "." }, "cargo-sources.json"]
     }
