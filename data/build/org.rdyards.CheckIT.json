@@ -19,8 +19,8 @@
       "name": "checkit",
       "buildsystem": "simple",
       "build-commands": [
-        "cargo --offline fetch --manifest-path Cargo.toml",
-        "cargo build --release --offline",
+        "cargo fetch --manifest-path Cargo.toml",
+        "cargo build --release",
         "install -Dm755 target/release/checkit /app/bin/checkit",
         "install -Dm644 data/build/checkit.desktop /app/share/applications/checkit.desktop",
         "install -Dm644 data/build/org.rdyards.CheckIT.svg /app/share/icons/hicolor/scalable/apps/checkit.svg"
