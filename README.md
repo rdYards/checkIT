@@ -27,9 +27,8 @@ The easiest way to install CheckIT is by downloading a pre-built package from th
 
 ### macOS
 1. Download the `CheckIT-macos.zip` file from the latest release
-2. Unzip the file: `unzip CheckIT-macos.zip`
-3. Move the CheckIT app to your Applications folder: `mv CheckIT.app /Applications/`
-4. Open the app from Launchpad or Finder
+2. Move the CheckIT app to your Applications folder: `mv CheckIT.app /Applications/`
+3. Open the app from Launchpad or Finder
 
 Note: This is not part of the MacOS Developer Program and the app may trigger a security warning when first opened. You can bypass this by:
 1. Opening System Settings
