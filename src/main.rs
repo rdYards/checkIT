@@ -15,6 +15,9 @@ const DEFAULT_FILE_PATH: &str = "~/";
 
 #[tokio::main]
 async fn main() -> glib::ExitCode {
+    // Initialize GTK before creating the application
+    gtk::init().expect("Failed to initialize GTK");
+
     // Load resources from the output directory
     let res_bytes = include_bytes!(concat!(env!("OUT_DIR"), "/data/checkit.gresource"));
     let bytes = glib::Bytes::from(&res_bytes[..]); // Convert to &[u8]
