@@ -3,7 +3,7 @@ use std::{fs, path::Path, process::Command};
 
 fn main() {
     // Re-run build if resource files change
-    println!("cargo:rerun-if-changed=data/build/org.gtk-rs.CheckIT.svg");
+    println!("cargo:rerun-if-changed=data/build/org.rdyards.CheckIT.svg");
     println!("cargo:rerun-if-changed=data/resources.gresource.xml");
     println!("cargo:rerun-if-changed=data/resources/ui/window.ui");
     println!("cargo:rerun-if-changed=data/resources/ui/placeholder.ui");
@@ -12,9 +12,11 @@ fn main() {
     // Get the output directory
     let out_dir = std::env::var("OUT_DIR").unwrap_or_else(|_| "target/debug".to_string());
     let data_dir = Path::new(&out_dir).join("data");
+    let build_dir = Path::new("data/build");
 
-    // Create the directory if it doesn't exist
+    // Create directories if they don't exist
     std::fs::create_dir_all(&data_dir).expect("Failed to create output directory");
+    std::fs::create_dir_all(build_dir).expect("Failed to create build directory");
 
     // Compile GResources with full path
     compile_resources(
@@ -23,12 +25,19 @@ fn main() {
         data_dir.join("checkit.gresource").to_str().unwrap(),
     );
 
-    // macOS Icon Generation
-    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
-    let svg_source = "data/build/org.gtk-rs.CheckIT.svg";
-    let icns_dest = "data/build/org.gtk-rs.CheckIT.icns";
+    // Prepare icon for all platforms
+    let svg_source = "data/build/org.rdyards.CheckIT.svg";
 
     if Path::new(svg_source).exists() {
+        // For non-macOS platforms, ensure we have the SVG available
+        if let Err(e) = fs::copy(svg_source, build_dir.join("org.rdyards.CheckIT.svg")) {
+            eprintln!("Failed to copy SVG icon: {}", e);
+        }
+
+        // macOS Icon Generation
+        let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+        let icns_dest = "data/build/org.rdyards.CheckIT.icns";
+
         if target_os == "macos" {
             if let Err(e) = generate_macos_icon(svg_source, icns_dest) {
                 println!("cargo:warning=Failed to generate macOS icon: {}", e);
@@ -47,7 +56,7 @@ fn main() {
     ) -> Result<(), Box<dyn std::error::Error>> {
         // iconutil expects an .iconset directory and produces an .icns file.
         // If we name our directory '...CheckIT.iconset', iconutil will create '...CheckIT.icns'.
-        let iconset_dir = "data/build/org.gtk-rs.CheckIT.iconset";
+        let iconset_dir = "data/build/org.rdyards.CheckIT.iconset";
 
         if Path::new(iconset_dir).exists() {
             fs::remove_dir_all(iconset_dir)?;
@@ -68,7 +77,6 @@ fn main() {
             let output_png = format!("{}/icon_{}.png", iconset_dir, label);
 
             // Using rsvg-convert (from librsvg) to convert SVG to PNG.
-            // This tool is widely available on both Linux and macOS.
             let status = Command::new("rsvg-convert")
                 .arg("-w")
                 .arg(size.to_string())
