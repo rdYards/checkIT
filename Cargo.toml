@@ -1,6 +1,6 @@
 [package]
 name = "checkit"
-version = "0.0.9"
+version = "0.0.10"
 authors = ["rdyards <rdyards@protonmail.com>"]
 edition = "2024"
 description = "Native secure Ledger app for tracking data"
@@ -31,8 +31,9 @@ url = "https://github.com/rdYards/checkIT"
 assets = [
     { source = "target/release/checkit", dest = "/usr/bin/checkit", mode = "755" },
     { source = "data/build/checkit.desktop", dest = "/usr/share/applications/checkit.desktop", mode = "644" },
-    { source = "data/build/org.gtk-rs.CheckIT.svg", dest = "/usr/share/icons/hicolor/scalable/apps/checkit.svg", mode = "644" },
+    { source = "data/build/org.rdyards.CheckIT.svg", dest = "/usr/share/icons/hicolor/scalable/apps/checkit.svg", mode = "644" },
 ]
+
 
 [package.metadataPublicApp.generate-rpm.requires]
 gtk4 = "*"
@@ -42,7 +43,7 @@ glib2 = "*"
 [package.metadata.bundle]
 name = "CheckIT"
 identifier = "org.rdyards.checkit"
-icon = ["data/build/org.gtk-rs.CheckIT.icns", "data/build/org.gtk-rs.CheckIT.svg"]
+icon = ["data/build/org.rdyards.CheckIT.icns", "data/build/org.rdyards.CheckIT.svg"]
 copyright = "Copyright (c) 2026 rdYards. All rights reserved."
 osx_minimum_system_version = "10.13"
 deb_depends = ["libgtk-4-1", "libadwaita-1-0", "libglib2.0-0"]
