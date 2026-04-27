@@ -42,7 +42,6 @@ fn main() {
 /// Generates an .icns file from an .svg source using rsvg-convert and iconutil.
 fn generate_macos_icon(svg_path: &PathBuf, icns_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     // iconutil expects an .iconset directory and produces an .icns file.
-    // If we name our directory '...CheckIT.iconset', iconutil will create '...CheckIT.icns'.
     let iconset_dir = "data/build/org.rdyards.CheckIT.iconset";
 
     if Path::new(iconset_dir).exists() {
@@ -63,7 +62,7 @@ fn generate_macos_icon(svg_path: &PathBuf, icns_path: &PathBuf) -> Result<(), Bo
     for (size, label) in sizes {
         let output_png = format!("{}/icon_{}.png", iconset_dir, label);
 
-        // Using rsvg-convert (from librsvg) to convert SVG to PNG.
+        // Using rsvg-convert to convert SVG to PNG.
         let status = Command::new("rsvg-convert")
             .arg("-w")
             .arg(size.to_string())
@@ -95,9 +94,6 @@ fn generate_macos_icon(svg_path: &PathBuf, icns_path: &PathBuf) -> Result<(), Bo
     if generated_icns.exists() {
         fs::rename(generated_icns, icns_path)?;
     }
-
-    // // Clean up the temporary iconset directory
-    // fs::remove_dir_all(iconset_dir)?;
 
     Ok(())
 }
