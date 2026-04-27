@@ -88,7 +88,7 @@ pub fn build_app(app: &Application) {
     view_stack.set_visible_child_name("placeholder");
 
     window.set_application(Some(app));
-    window.set_icon_name(Some("org.gtk-rs.CheckIT"));
+    window.set_icon_name(Some("org.rdyards.CheckIT"));
 
     // Setup P2P Channel
     let (p2p_tx, mut p2p_rx) = mpsc::unbounded_channel::<IncomingTransfer>();
@@ -190,7 +190,7 @@ fn setup_actions(
                 move |_, _, _| {
                     let about = AboutDialog::builder()
                         .application_name("CheckIT")
-                        .application_icon("org.gtk-rs.CheckIT")
+                        .application_icon("org.rdyards.CheckIT")
                         .version(env!("CARGO_PKG_VERSION"))
                         .license_type(License::Gpl20)
                         .website("https://github.com/gtk-rs/checkit")
