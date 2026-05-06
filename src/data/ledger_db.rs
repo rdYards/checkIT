@@ -20,7 +20,7 @@ pub enum LockEvent {
 pub struct LedgerBannerInfo {
     pub key: String,
     pub title: String,
-    pub state: LedgerState, // Unused at the moment will be used for future backgroun processing
+    pub state: LedgerState, // Unused at the moment will be used for future background processing
 }
 
 /// The thread-safe ledger database.
@@ -83,6 +83,9 @@ impl LedgerDatabase {
         // Update root path to prevent saving to the wrong location
         ledger.data.meta.root_path = std::path::PathBuf::from(&path);
 
+        // Log ledger loaded into a system via file
+        let _ = ledger.data.log_event("Ledger loaded from file to CheckIT");
+
         let key = format!("{}_{}", path, self.generate_unique_id());
         self.add_ledger_internal(key, ledger)?;
         Ok(())
@@ -97,6 +100,9 @@ impl LedgerDatabase {
         );
 
         ledger.meta.root_path = std::path::PathBuf::from("~/");
+
+        // Log ledger loaded into a system via p2p
+        let _ = ledger.log_event("Ledger loaded from p2p to CheckIT");
 
         // Convert SecureLedger to Ledger before adding to the database
         let ledger_to_add = Ledger {
@@ -125,6 +131,9 @@ impl LedgerDatabase {
 
         // Create new Ledger instance with new password and title
         let mut new_ledger = Ledger::new(&new_password, &new_title, &description);
+
+        // Add to ledger it is a clone
+        new_ledger.data.log_warning("Cloned from another Ledger")?;
 
         // Copy the entries from the old ledger to the new one
         for entry in &original_ledger.data.ledger {
@@ -237,6 +246,7 @@ impl LedgerDatabase {
     ) -> Result<(), String> {
         let mut ledgers = self.ledgers.write().map_err(|e| e.to_string())?;
         if let Some(ledger) = ledgers.get_mut(key) {
+            let _ = ledger.data.log_warning("Ledger discription was updated");
             ledger.data.meta.description = new_description;
             self.emit(LockEvent::LedgerUpdated(key.to_string()));
             Ok(())

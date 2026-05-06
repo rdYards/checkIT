@@ -252,10 +252,13 @@ impl P2PManager {
         };
 
         // Prepare Ledger Data
-        let ledger = self
+        let mut ledger = self
             .db
             .get_ledger_data(&ledger_key)
             .ok_or("Ledger not found")?;
+        
+        // Log ledger being send over p2p
+        let _ = ledger.data.log_event("Entire Ledger was sent over CheckIT p2p");
 
         // Encrypt data to stream over network
         let raw_data = postcard::to_allocvec(&ledger.data)
@@ -417,9 +420,11 @@ impl P2PManager {
             match data_type {
                 TransferType::FullLedger => {
                     // Deserialize and import the full ledger
-                    let ledger: SecureLedger = postcard::from_bytes(&decrypted)
+                    let mut ledger: SecureLedger = postcard::from_bytes(&decrypted)
                         .map_err(|e| format!("Deserialization error: {}", e))?;
 
+                    let _ = ledger.log_event("Ledger sent and recived via CheckIT p2p");
+                    
                     self.db
                         .import_ledger_internal(ledger)
                         .map_err(|e| format!("Failed to import received ledger: {}", e))?;
