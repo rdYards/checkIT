@@ -4,8 +4,9 @@ use adw::{
     gio, gio::ActionEntry, glib::clone, prelude::*,
 };
 use gtk::{
-    Box as GTKBox, Builder, Button, CssProvider, FileDialog, IconTheme, Image, Label, License,
-    ListBox, MenuButton, Orientation, PolicyType, Popover, ScrolledWindow, SearchEntry, Widget,
+    Box, Builder, Button, CssProvider, FileDialog, IconTheme, Image, Label, License, ListBox,
+    MenuButton, Orientation, PolicyType, Popover, ScrolledWindow, SearchEntry, SelectionMode,
+    Widget,
 };
 use std::{rc::Rc, sync::Arc};
 use tokio::sync::mpsc;
@@ -155,6 +156,7 @@ fn setup_shortcuts(app: &Application) {
     app.set_accels_for_action("win.close", &["<Ctrl>w"]);
     app.set_accels_for_action("win.show-about", &["<Ctrl>a"]);
     app.set_accels_for_action("win.show-keybinds", &["<Ctrl>k"]);
+    app.set_accels_for_action("win.show-logs", &["<Ctrl>l"]);
 
     // Ledger Shortcuts
     app.set_accels_for_action("win.new-ledger", &["<Ctrl>n"]);
@@ -574,7 +576,7 @@ fn setup_actions(
                         .propagate_natural_height(true)
                         .build();
 
-                    let main_box = GTKBox::new(Orientation::Vertical, 5);
+                    let main_box = Box::new(Orientation::Vertical, 5);
 
                     let search_entry = SearchEntry::builder()
                         .placeholder_text("Search shortcuts")
@@ -597,6 +599,7 @@ fn setup_actions(
                                 ("Close Window", vec!["Ctrl", "W"]),
                                 ("About", vec!["Ctrl", "A"]),
                                 ("Keybinds", vec!["Ctrl", "K"]),
+                                ("Logs", vec!["Ctrl", "L"]),
                             ],
                         ),
                         (
@@ -633,7 +636,7 @@ fn setup_actions(
                         for (label_text, keys) in shortcuts {
                             let row = ActionRow::builder().title(label_text).build();
 
-                            let key_box = GTKBox::new(Orientation::Horizontal, 4);
+                            let key_box = Box::new(Orientation::Horizontal, 4);
                             for key in keys {
                                 let key_label = Label::new(Some(key));
                                 key_label.add_css_class("shortcut-badge");
@@ -662,6 +665,76 @@ fn setup_actions(
                     }));
                     scrolled_window.set_child(Some(&main_box));
                     dialog.set_child(Some(&scrolled_window));
+                    dialog.present(Some(&window));
+                }
+            ))
+            .build(),
+        // Action to show Logs dialog
+        ActionEntry::builder("show-logs")
+            .activate(clone!(
+                #[weak]
+                window,
+                #[strong]
+                db,
+                move |_, _, _| {
+                    let dialog = Dialog::builder().title("Logs").build();
+                    dialog.set_width_request(600);
+
+                    let scrolled_window = ScrolledWindow::builder()
+                        .hscrollbar_policy(PolicyType::Never)
+                        .min_content_height(400)
+                        .min_content_width(560)
+                        .propagate_natural_width(true)
+                        .propagate_natural_height(true)
+                        .build();
+
+                    let main_box = Box::new(Orientation::Vertical, 5);
+
+                    let search_entry = SearchEntry::builder()
+                        .placeholder_text("Search logs")
+                        .margin_top(10)
+                        .margin_bottom(10)
+                        .margin_start(10)
+                        .margin_end(10)
+                        .vexpand(true)
+                        .build();
+
+                    let header_bar = HeaderBar::new();
+                    header_bar.set_title_widget(Some(&search_entry));
+                    main_box.append(&header_bar);
+
+                    let log_list = ListBox::new();
+                    log_list.set_selection_mode(SelectionMode::None);
+
+                    let current_key = db.get_current_ledger_key();
+                    let mut all_log_rows = Vec::new();
+
+                    // Build rows for each error_log
+                    if let Some(key) = current_key {
+                        if let Some(ledger) = db.get_ledger_data(&key) {
+                            for log in &ledger.data.error_log {
+                                let row = ActionRow::builder().title(log).build();
+                                log_list.append(&row);
+                                all_log_rows.push((row, log.clone()));
+                            }
+                        }
+                    }
+
+                    // Search Filtering
+                    search_entry.connect_search_changed(clone!(move |entry| {
+                        let text = entry.text().to_lowercase();
+                        for (row, log_text) in &all_log_rows {
+                            if log_text.to_lowercase().contains(&text) {
+                                row.set_visible(true);
+                            } else {
+                                row.set_visible(false);
+                            }
+                        }
+                    }));
+
+                    scrolled_window.set_child(Some(&log_list));
+                    main_box.append(&scrolled_window);
+                    dialog.set_child(Some(&main_box));
                     dialog.present(Some(&window));
                 }
             ))
@@ -791,7 +864,7 @@ fn on_save_as_ledger(window: &ApplicationWindow, db: Arc<LedgerDatabase>, key: &
 
 fn setup_global_menu(menu_button: &MenuButton) {
     let popover = Popover::new();
-    let popover_content = GTKBox::new(Orientation::Vertical, 0);
+    let popover_content = Box::new(Orientation::Vertical, 0);
     popover_content.set_margin_start(5);
     popover_content.set_margin_end(5);
     popover_content.set_margin_bottom(5);
@@ -820,7 +893,7 @@ fn setup_global_menu(menu_button: &MenuButton) {
             }
         ));
 
-        let btn_box = GTKBox::new(Orientation::Horizontal, 10);
+        let btn_box = Box::new(Orientation::Horizontal, 10);
         btn_box.append(&Image::from_icon_name(icon_name));
         btn_box.append(&Label::new(Some(text)));
         btn.set_child(Some(&btn_box));

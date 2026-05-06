@@ -885,6 +885,7 @@ impl PageManager {
             ("Save", "document-save-symbolic", "win.save-ledger"),
             ("Save As", "document-save-as-symbolic", "win.save-as-ledger"),
             ("Clone", "edit-copy-symbolic", "win.clone-ledger"),
+            ("Logs", "dialog-question-symbolic", "win.show-logs"),
             ("Share", "folder-publicshare-symbolic", "win.share-ledger"),
             ("Remove", "edit-delete-symbolic", "win.remove-ledger"),
         ];
