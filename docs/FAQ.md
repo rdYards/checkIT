@@ -19,6 +19,15 @@ This is a Gatekeeper warning. CheckIT is not part of the MacOS Developer Program
 1. Opening System Settings
 2. Going to Privacy & Security
 3. Scrolling down to the "Open Anyway" button for CheckIT
+
+### Icons are missing after installing on MacOS
+You may be missing `adwaita-icon-theme`. To fix install the mentioned package.
+
+Easiest solution is via
+```sh
+brew install adwaita-icon-theme   
+```
+
 ### Can I install CheckIT using the package managers?
 No, at the current moment CheckIT is not apart of any package managers.
 

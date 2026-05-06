@@ -1,5 +1,9 @@
 use glib_build_tools::compile_resources;
-use std::{fs, path::{Path, PathBuf}, process::Command};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 fn main() {
     println!("cargo:rerun-if-changed=data/build/org.rdyards.CheckIT.svg");
@@ -34,13 +38,23 @@ fn main() {
     if target_os == "macos" {
         let icns_dest = build_dir.join("org.rdyards.CheckIT.icns");
         if let Err(e) = generate_macos_icon(&svg_path, &icns_dest) {
-            println!("cargo:warning=Failed to generate macOS icon: {}", e);
+            panic!("Failed to generate macOS icon: {}", e);
+        }
+
+        let app_icon_dest = Path::new(&out_dir).join("org.rdyards.CheckIT.icns");
+
+        if icns_dest.exists() {
+            fs::copy(icns_dest, app_icon_dest.clone()).expect("Failed to copy icon to output");
+            println!("cargo:info=Copied icon to: {}", app_icon_dest.display());
         }
     }
 }
 
 /// Generates an .icns file from an .svg source using rsvg-convert and iconutil.
-fn generate_macos_icon(svg_path: &PathBuf, icns_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_macos_icon(
+    svg_path: &PathBuf,
+    icns_path: &PathBuf,
+) -> Result<(), Box<dyn std::error::Error>> {
     // iconutil expects an .iconset directory and produces an .icns file.
     let iconset_dir = "data/build/org.rdyards.CheckIT.iconset";
 
@@ -84,6 +98,11 @@ fn generate_macos_icon(svg_path: &PathBuf, icns_path: &PathBuf) -> Result<(), Bo
         .arg("icns")
         .arg(iconset_dir)
         .status()?;
+
+    if !status.success() {
+        let output = status.to_string();
+        return Err(format!("iconutil failed: {}", output).into());
+    }
 
     if !status.success() {
         return Err("iconutil failed to create icns file".into());

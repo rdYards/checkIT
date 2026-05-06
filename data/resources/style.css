@@ -158,10 +158,11 @@ ActionRow:hover {
 }
 
 ActionRow:selected {
-    background-color: color-mix(
-        in srgb,
-        var(--accent-bg-color),
-        transparent 85%
+    background-color: rgba(
+        var(--accent-color-r),
+        var(--accent-color-g),
+        var(--accent-color-b),
+        0.85
     );
     border-left: 3px solid var(--accent-color);
 }

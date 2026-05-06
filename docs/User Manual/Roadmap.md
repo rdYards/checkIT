@@ -1,5 +1,5 @@
 ### Future Updates
-- Logging
+- Logging (Added for current systems will include with all new features.)
 - Background processing
 - AI integration
 - Update Ledger Pages to match ledger name

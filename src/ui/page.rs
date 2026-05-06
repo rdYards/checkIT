@@ -865,7 +865,7 @@ impl PageManager {
         label.set_halign(Align::Fill);
         label.set_hexpand(true);
 
-        let inner_button_content = Image::from_icon_name("application-menu-symbolic");
+        let inner_button_content = Image::from_icon_name("preferences-system-symbolic");
 
         let settings_btn = MenuButton::new();
         settings_btn.set_child(Some(&inner_button_content));

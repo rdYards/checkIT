@@ -37,3 +37,9 @@ To install the application:
 If you encounter issues with the bundle, try:
 ```bash
 codesign --deep -s - target/release/bundle/osx/CheckIT.app
+```
+
+If you are missing icons install `adwaita-icon-theme`
+```bash
+brew install adwaita-icon-theme   
+```
