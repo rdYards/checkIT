@@ -16,7 +16,7 @@ jobs:
       image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
       options: --privileged
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -50,7 +50,7 @@ jobs:
   linux-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install System Dependencies
         run: |
@@ -93,7 +93,7 @@ jobs:
   macos-release:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install System Dependencies
         run: brew install gtk4 libadwaita meson
@@ -147,7 +147,7 @@ jobs:
   # windows-release:
   #   runs-on: windows-latest
   #   steps:
-  #     - uses: actions/checkout@v6
+  #     - uses: actions/checkout@v7
 
   #     - name: Install pkg-config
   #       run: choco install pkgconfiglite -y
