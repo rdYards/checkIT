@@ -1380,8 +1380,8 @@ checksum = "703d5c7ef118737c72f1af64ad2f6f8c5e1921f818cdcb97b8fe6fc69bf66214"
 
 [[package]]
 name = "sl"
-version = "0.3.5"
-source = "git+https://github.com/rdYards/sl.git#09ee5615cc4ca69b22f718c2bdf46e79ed4dc052"
+version = "0.3.6"
+source = "git+https://github.com/rdYards/sl.git#33021a4e855158fb7ab660a9d320270a3878cc1f"
 dependencies = [
  "aes-gcm",
  "argon2",
